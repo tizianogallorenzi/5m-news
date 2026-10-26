@@ -13,7 +13,9 @@ import { getStore, netlifyBlobsReal, usaSupabase } from "./blobs-supabase.mts";
 // ---------- Entorno de Netlify ----------
 (globalThis as any).Netlify = { env: { get: (k: string) => process.env[k], has: (k: string) => k in process.env } };
 const URL_PUBLICA = (process.env.SITE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`).replace(/\/$/, "");
-process.env.URL ||= URL_PUBLICA; // lo usa la actualización horaria para llamar a la función de fondo
+// La actualización horaria llama a la función de fondo por HTTP: se apunta a este mismo proceso (no a la URL pública),
+// para que durante un deploy el trabajo no caiga en la instancia vieja que se está apagando.
+process.env.URL = `http://127.0.0.1:${process.env.PORT || 3000}`;
 if (process.env.NETLIFY_SITE_ID && process.env.NETLIFY_BLOBS_TOKEN && !process.env.NETLIFY_BLOBS_CONTEXT) {
   process.env.NETLIFY_BLOBS_CONTEXT = Buffer.from(
     JSON.stringify({ siteID: process.env.NETLIFY_SITE_ID, token: process.env.NETLIFY_BLOBS_TOKEN }),

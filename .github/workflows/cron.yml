@@ -18,7 +18,7 @@ on:
         default: hourly
 
 env:
-  RENDER_URL: ${{ vars.RENDER_URL || 'https://5m-news.onrender.com' }}
+  RENDER_URL: ${{ vars.RENDER_URL || 'https://fivem-news.onrender.com' }}
 
 jobs:
   disparar:

@@ -252,4 +252,17 @@ const server = createServer(async (req, res) => {
 });
 
 const PORT = Number(process.env.PORT || 3000);
-server.listen(PORT, () => console.log(`[render] 5M News escuchando en :${PORT} (${URL_PUBLICA})`));
+server.listen(PORT, () => {
+  console.log(`[render] 5M News escuchando en :${PORT} (${URL_PUBLICA})`);
+  // Al arrancar (deploy o despertar del plan gratuito) se actualiza el briefing si pasaron más de 50 min
+  setTimeout(async () => {
+    try {
+      const motivo = await cronNoPermitido("hourly");
+      if (motivo) return console.log("[render] actualización al arrancar omitida:", motivo);
+      const req = new Request(`${URL_PUBLICA}/api/cron/hourly`, { method: "POST" });
+      await FUNCIONES["briefing-pipeline"].default(req, { site: { url: URL_PUBLICA, name: "5mnews" } });
+    } catch (e) {
+      console.error("[render] actualización al arrancar:", e);
+    }
+  }, 5_000);
+});

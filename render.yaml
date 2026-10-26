@@ -1,0 +1,44 @@
+# Render Blueprint: 5M News como Web Service gratuito (plan free), sin depender de Netlify.
+# Las mismas funciones de netlify/functions corren en render/server.mts; los datos están en Supabase.
+services:
+  - type: web
+    name: 5m-news
+    runtime: node
+    plan: free
+    region: virginia            # cerca de la base de Supabase (us-east-1)
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # --- Datos (suscriptores, ediciones, fotos, notificaciones): Supabase ---
+      - key: SUPABASE_URL
+        value: https://mhizyxhuhtjnctcfikdv.supabase.co
+      - key: SUPABASE_SECRET_KEY       # Supabase > Project Settings > API Keys > Secret keys
+        sync: false
+      # --- Claude: clave propia (en Netlify la ponía el AI Gateway) ---
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # --- Emails (mismos valores que en Netlify) ---
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      # --- Administración y tareas programadas ---
+      - key: ADMIN_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      # URL pública que va en los links de los emails (confirmar / darse de baja)
+      - key: SITE_URL
+        sync: false
+      # --- Sólo para copiar una vez los datos que quedaron en Netlify (después se pueden borrar) ---
+      - key: NETLIFY_SITE_ID
+        value: 99b83157-8c01-41cf-a7f9-a55345d59529
+      - key: NETLIFY_BLOBS_TOKEN
+        sync: false
+      # Opcionales: FMP_API_KEY, BRIEFING_MODEL, VAPID_SUBJECT, EMAIL_FROM

@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5M News — El mundo, informado en menos de 5 minutos</title>
+  <meta name="description" content="Las noticias más importantes de Argentina y el mundo resumidas para leer antes de salir de casa.">
+  <!-- App instalable (acceso directo en celular y computadora) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="5M News">
+  <meta name="application-name" content="5M News">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
+
+  <!-- Aplica el tema antes de pintar para evitar el parpadeo -->
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('5m-theme'); } catch (e) {}
+      if (t === 'dark') { // por defecto: claro (fondo blanco), aunque el sistema esté en oscuro
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
+  <!-- Tailwind CDN: sólo para prototipo. En producción se usa el build de Next.js -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>
+    if (window.tailwind) tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            ink: '#111214',
+            paper: '#FAF8F4',
+            pulse: '#E5372A',
+            timer: '#F2A93B',
+            catMundo: '#2563EB',
+            catEcon: '#0F9D6B',
+            catArg: '#4A9FD8',
+            catTech: '#7C3AED'
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            serif: ['Newsreader', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root { --line: #E5E7EB; --card: #FFFFFF; --muted: #FFFFFF; }
+    .dark { --line: #26282C; --card: #17191C; --muted: #1E2024; }
+    body { background: #FFFFFF; }
+    .dark body { background: #111214; }
+    .border-custom { border-color: var(--line); }
+    .divide-custom > * + * { border-top: 1px solid var(--line); }
+    .bg-card { background: var(--card); }
+    .bg-soft { background: var(--muted); }
+    .bg-soft:not(.border-dashed) { border: 1px solid var(--line); }
+    .kicker { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
+    @keyframes blink { 50% { opacity: .3; } }
+    .live-dot { animation: blink 1.6s ease-in-out infinite; }
+    .text-balance { text-wrap: balance; }
+    /* Visualizaciones — paleta validada (categórica azul/naranja; divergente azul/rojo) */
+    :root { --viz-1: #2a78d6; --viz-2: #eb6834; --viz-pos: #2a78d6; --viz-neg: #e34948; --viz-grid: #e5e7eb; --viz-surface: #ffffff; }
+    .dark { --viz-1: #3987e5; --viz-2: #d95926; --viz-pos: #3987e5; --viz-neg: #e66767; --viz-grid: #2a2d33; --viz-surface: #17191c; }
+    .viz-barra { width: 0; transition: width .7s cubic-bezier(.2,.8,.2,1); }
+    .viz-visible .viz-barra { width: var(--w); }
+    .viz-fila:hover .viz-barra, .viz-fila:focus-visible .viz-barra { filter: brightness(1.12); }
+    .viz-linea path.serie { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); transition: stroke-dashoffset 1s ease-out; }
+    .viz-visible.viz-linea path.serie { stroke-dashoffset: 0; }
+    #viz-tooltip { position: fixed; z-index: 70; pointer-events: none; opacity: 0; transition: opacity .12s; }
+    #viz-tooltip.on { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) { .viz-barra, .viz-linea path.serie { transition: none; } }
+  </style>
+</head>
+
+<body class="text-slate-900 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- PROGRESO DE LECTURA (decorativo) -->
+  <div id="progreso-lectura" aria-hidden="true" class="fixed top-0 inset-x-0 z-[60] h-[3px] pointer-events-none">
+    <div id="progreso-lectura-barra" class="h-full w-full bg-pulse origin-left" style="transform: scaleX(0)"></div>
+  </div>
+
+  <a href="#contenido" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] bg-pulse text-white px-3 py-2 rounded">Saltar al contenido</a>
+
+  <!-- TOPBAR EN VIVO -->
+  <div class="bg-white text-slate-700 text-xs border-b border-custom dark:bg-ink dark:text-slate-200">
+    <div class="max-w-6xl mx-auto px-4 h-9 flex items-center gap-4 overflow-x-auto no-scrollbar whitespace-nowrap">
+      <span class="flex items-center gap-1.5 font-bold uppercase tracking-wider text-red-600 dark:text-red-400">
+        <span class="live-dot w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400"></span> En vivo
+      </span>
+      <span id="fecha-actual" class="text-slate-600 dark:text-slate-300"></span>
+      <span id="reloj" class="font-mono tabular-nums text-slate-900 dark:text-slate-100"></span>
+      <span class="w-px h-4 bg-slate-200 dark:bg-white/20"></span>
+      <span id="dolar" class="flex items-center gap-3" aria-label="Cotizaciones">
+        <span><span class="text-slate-500">Oficial</span> <b class="font-mono">$ —</b></span>
+        <span><span class="text-slate-500">Blue</span> <b class="font-mono">$ —</b></span>
+      </span>
+      <span class="ml-auto inline-flex items-center gap-1 bg-white border border-amber-300 text-amber-800 dark:bg-transparent dark:border-amber-500/40 dark:text-timer px-2.5 py-0.5 rounded-full font-semibold">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Lectura total de hoy: <span id="lectura-total">—</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- HEADER PRINCIPAL -->
+  <header class="border-b border-custom bg-white dark:bg-ink sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+      <a href="#" class="flex items-center gap-2 shrink-0" aria-label="5M News — Inicio">
+        <span class="bg-pulse text-white font-serif font-bold w-9 h-9 grid place-items-center rounded-lg text-lg">5M</span>
+        <span class="leading-none">
+          <span class="block font-serif font-bold text-xl">5M <span class="text-pulse">News</span></span>
+          <span class="hidden sm:block text-[10px] uppercase tracking-[.18em] text-slate-500 mt-0.5">El mundo en menos de 5 minutos</span>
+        </span>
+      </a>
+
+      <form id="buscador" role="search" class="hidden md:block ml-auto w-full max-w-xs relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+        <input id="q" type="search" placeholder="Buscar en el briefing…" aria-label="Buscar noticias"
+          class="w-full h-10 pl-9 pr-4 rounded-full border border-custom bg-card text-sm focus:outline-none focus:ring-2 focus:ring-pulse">
+      </form>
+
+      <div class="ml-auto md:ml-0 flex items-center gap-1.5">
+        <button id="btn-instalar" type="button" class="hidden h-10 inline-flex items-center gap-1.5 px-3 rounded-full text-sm font-semibold text-pulse border border-pulse/40 hover:bg-pulse/5" aria-haspopup="dialog">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span class="hidden sm:inline">Instalar app</span><span class="sm:hidden">App</span>
+        </button>
+        <button id="btn-tema" class="w-10 h-10 grid place-items-center rounded-full hover:bg-black/5 dark:hover:bg-white/10" aria-label="Cambiar entre modo claro y oscuro">
+          <span class="dark:hidden"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="hidden dark:inline"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>
+        </button>
+        <button id="btn-audio" class="inline-flex items-center gap-2 h-10 px-4 rounded-full bg-white border border-slate-900 text-slate-900 dark:bg-transparent dark:border-slate-100 dark:text-slate-100 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-white/10">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 15a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2zM3 15a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"/></svg> <span class="hidden sm:inline" id="btn-audio-label">Escuchar Briefing</span>
+        </button>
+      </div>
+    </div>
+    <div class="md:hidden px-4 pb-3">
+      <input id="q-mobile" type="search" placeholder="Buscar en el briefing…" aria-label="Buscar noticias"
+        class="w-full h-10 px-4 rounded-full border border-custom bg-card text-sm focus:outline-none focus:ring-2 focus:ring-pulse">
+    </div>
+    <!-- SECCIONES: hover = adelanto (escritorio), clic = página de la sección -->
+    <nav id="secciones" aria-label="Secciones" class="border-t border-custom">
+      <ul id="secciones-lista" class="max-w-6xl mx-auto px-2 sm:px-4 flex items-stretch gap-0.5 overflow-x-auto lg:overflow-visible no-scrollbar"></ul>
+    </nav>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main id="contenido" class="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+
+    <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
+      <div>
+        <p class="kicker text-slate-500" id="fecha-larga"></p>
+        <h1 class="font-serif font-semibold text-4xl md:text-5xl tracking-tight mt-1 text-balance">Buen día. Esto es lo que tenés que saber.</h1>
+      </div>
+      <p class="text-sm text-slate-500 md:text-right"><b class="text-slate-900 dark:text-slate-100" id="cant-noticias"></b> · curadas y contrastadas por la redacción</p>
+    </div>
+
+    <div id="aviso-suscripcion" class="hidden mb-6" role="status"></div>
+    <div id="resultados-busqueda" class="hidden mb-8"></div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+      <!-- COLUMNA PRINCIPAL (8/12) -->
+      <div class="lg:col-span-8">
+        <div id="vista-seccion" hidden></div>
+        <div id="vista-portada" class="space-y-12">
+
+        <section aria-labelledby="hero-label">
+          <div class="flex items-center justify-between border-t-2 border-slate-900 dark:border-slate-100 pt-3 mb-4">
+            <h2 id="hero-label" class="kicker text-pulse">El Brief de Hoy</h2>
+            <span class="text-xs text-slate-500" id="hero-hora"></span>
+          </div>
+          <div id="hero"></div>
+          <div id="franja-notif" class="hidden lg:hidden mt-4 rounded-2xl border border-custom bg-card p-3 flex items-center gap-3">
+            <span class="w-10 h-10 shrink-0 rounded-full bg-pulse/10 text-pulse grid place-items-center" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+            <p class="flex-1 text-sm leading-snug"><b>Notificaciones</b><br><span class="text-slate-500">El briefing de lunes a viernes a las 7:00 AM.</span></p>
+            <button type="button" id="franja-notif-si" class="h-9 px-4 rounded-full bg-pulse text-white text-sm font-semibold">Activar</button>
+          </div>
+        </section>
+
+        <div class="h-[90px] rounded-xl border border-dashed border-custom bg-soft grid place-items-center text-xs text-slate-500 text-center" aria-label="Publicidad">
+          <span><span class="kicker block">Publicidad</span>728×90</span>
+        </div>
+
+        <section aria-labelledby="clave-label">
+          <div class="flex items-baseline justify-between border-t-2 border-slate-900 dark:border-slate-100 pt-3 mb-4">
+            <h2 id="clave-label" class="kicker">4 Noticias Clave</h2>
+            <span class="text-xs text-slate-500">Lo urgente, global y local</span>
+          </div>
+          <div id="grid-clave" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+        </section>
+
+        <section id="mercados-portada" aria-labelledby="mercados-label" class="border-t-2 border-slate-900 dark:border-slate-100 pt-3">
+          <h2 id="mercados-label">
+            <button id="mercados-toggle" type="button" aria-expanded="false" aria-controls="mercados-panel"
+              class="w-full flex items-center justify-between gap-3 rounded-2xl border border-custom bg-card px-4 py-3 text-left hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+              <span>
+                <span class="kicker block text-amber-700 dark:text-amber-400">Mercados</span>
+                <span class="block text-sm text-slate-600 dark:text-slate-300 mt-0.5">Índices, dólar, riesgo país, bonos y CEDEARs</span>
+              </span>
+              <span class="flex items-center gap-1.5 text-sm font-semibold shrink-0">
+                <span id="mercados-toggle-texto">Ver mercados</span>
+                <svg id="mercados-chevron" class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </button>
+          </h2>
+          <div id="mercados-panel" role="region" aria-labelledby="mercados-label" hidden class="pt-4">
+            <div id="mercados-nota"></div>
+            <div id="mercados-indicadores" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+            <div id="mercados-noticias" class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="mercados-fuentes" class="mt-3"></div>
+          </div>
+        </section>
+
+        <section aria-labelledby="feed-label">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t-2 border-slate-900 dark:border-slate-100 pt-3 mb-2">
+            <h2 id="feed-label" class="kicker">Al Grano</h2>
+            <div id="filtros" role="tablist" aria-label="Filtrar por categoría" class="flex gap-1.5 overflow-x-auto no-scrollbar"></div>
+          </div>
+          <ol id="feed" class="divide-custom border-y border-custom"></ol>
+        </section>
+        </div>
+      </div>
+
+      <!-- SIDEBAR (4/12) -->
+      <aside class="lg:col-span-4 space-y-6" aria-label="Barra lateral">
+        <div class="p-5 rounded-2xl border border-custom bg-card">
+          <h3 class="font-serif font-bold text-xl">En 30 Segundos</h3>
+          <p class="text-xs text-slate-500 mt-0.5">Tendencias rápidas del día</p>
+          <ol id="tendencias" class="mt-4 space-y-3.5 text-sm"></ol>
+        </div>
+
+        <div id="tarjeta-notif" class="p-5 rounded-2xl border border-custom bg-card">
+          <div class="flex items-start gap-3">
+            <span class="w-10 h-10 shrink-0 rounded-full bg-pulse/10 text-pulse grid place-items-center" aria-hidden="true">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </span>
+            <div class="min-w-0">
+              <h3 class="font-serif font-bold text-xl leading-tight">Notificaciones</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Recibí el briefing <b class="text-slate-900 dark:text-white">de lunes a viernes a las 7:00 AM</b> y el Resumen de los Jueves, directo en tu pantalla.</p>
+            </div>
+          </div>
+          <div id="notif-estado" class="mt-4 text-sm" aria-live="polite"></div>
+        </div>
+
+        <div class="p-5 rounded-2xl border border-custom bg-card border-t-4 border-t-pulse">
+          <h3 class="font-serif font-bold text-xl">Tu briefing diario y semanal</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 mt-1 mb-4">Recibí el resumen diario a las 7:00 AM y el análisis compilado los días <b class="text-slate-900 dark:text-white">JUEVES</b>. Gratis.</p>
+          <form id="form-newsletter" class="space-y-3" novalidate>
+            <p class="hidden" aria-hidden="true"><label>No completar: <input name="website" tabindex="-1" autocomplete="off"></label></p>
+            <label for="nl-email" class="sr-only">Email</label>
+            <input id="nl-email" name="email" type="email" placeholder="tu@email.com" required autocomplete="email"
+              class="w-full h-10 px-4 text-sm rounded-full bg-card border border-custom text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-pulse">
+            <fieldset class="space-y-2">
+              <legend class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">¿Qué querés recibir?</legend>
+              <label class="flex items-start gap-3 rounded-xl border border-custom bg-card p-3 cursor-pointer hover:border-slate-300 transition has-[:checked]:border-pulse/70">
+                <input type="checkbox" name="resumen_diario" value="si" checked class="mt-0.5 w-4 h-4 accent-pulse">
+                <span class="text-sm leading-tight"><b>Briefing diario (7:00 AM)</b><span class="block text-xs text-slate-500 mt-0.5">De lunes a viernes, antes de salir de casa</span></span>
+              </label>
+              <label class="flex items-start gap-3 rounded-xl border border-custom bg-card p-3 cursor-pointer hover:border-slate-300 transition has-[:checked]:border-pulse/70">
+                <input type="checkbox" name="analisis_semanal_jueves" value="si" checked class="mt-0.5 w-4 h-4 accent-pulse">
+                <span class="text-sm leading-tight"><b>Resumen de los Jueves</b><span class="block text-xs text-slate-500 mt-0.5">Lo más importante de la semana, compilado</span></span>
+              </label>
+            </fieldset>
+            <p id="nl-error" class="hidden text-xs font-semibold text-red-600 dark:text-red-400" role="alert"></p>
+            <button type="submit" id="nl-submit" class="w-full h-10 bg-pulse hover:bg-red-600 disabled:opacity-60 text-white text-sm font-semibold rounded-full transition">Suscribirme gratis</button>
+            <p class="text-[11px] text-slate-500">Etapa de prueba interna · Sin spam. Te das de baja con un clic.</p>
+          </form>
+          <div id="nl-ok" class="hidden" role="status">
+            <p id="nl-ok-titulo" class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">¡Casi listo! Revisá tu email.</p>
+            <p id="nl-ok-detalle" class="text-xs text-slate-600 dark:text-slate-300 mt-1"></p>
+          </div>
+        </div>
+
+        <div class="aspect-[300/250] rounded-xl border border-dashed border-custom bg-soft grid place-items-center text-xs text-slate-500 text-center" aria-label="Publicidad">
+          <span><span class="kicker block">Publicidad</span>300×250</span>
+        </div>
+        <div class="hidden lg:grid lg:sticky lg:top-24 aspect-[300/600] rounded-xl border border-dashed border-custom bg-soft place-items-center text-xs text-slate-500 text-center" aria-label="Publicidad">
+          <span><span class="kicker block">Publicidad</span>300×600</span>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="viz-tooltip" role="presentation" class="rounded-lg border border-custom bg-card shadow-lg px-3 py-2 text-xs"></div>
+
+  <!-- REPRODUCTOR DE AUDIO -->
+  <div id="player" class="hidden fixed inset-x-3 bottom-3 z-50 mx-auto max-w-xl rounded-2xl border border-custom bg-card/95 backdrop-blur shadow-2xl p-3" role="region" aria-label="Reproductor del briefing">
+    <div class="flex items-center gap-3">
+      <button id="pl-toggle" class="w-10 h-10 shrink-0 rounded-full bg-pulse text-white grid place-items-center" aria-label="Pausar"></button>
+      <div class="min-w-0 flex-1">
+        <p class="kicker text-pulse" id="pl-pos"></p>
+        <p class="text-sm font-medium truncate" id="pl-texto"></p>
+        <div class="mt-2 h-1 rounded-full bg-soft overflow-hidden"><div id="pl-bar" class="h-full bg-pulse transition-all duration-500" style="width:0%"></div></div>
+        <div class="mt-2 flex items-center gap-2 text-xs">
+          <span id="pl-vel-label" class="text-slate-500">Velocidad</span>
+          <div id="pl-velocidad" role="radiogroup" aria-labelledby="pl-vel-label" class="inline-flex rounded-full border border-custom p-0.5">
+            <button type="button" role="radio" data-vel="1" class="px-2.5 py-0.5 rounded-full font-semibold transition-colors">1x</button>
+            <button type="button" role="radio" data-vel="1.25" class="px-2.5 py-0.5 rounded-full font-semibold transition-colors">1.25x</button>
+            <button type="button" role="radio" data-vel="1.5" class="px-2.5 py-0.5 rounded-full font-semibold transition-colors">1.5x</button>
+          </div>
+        </div>
+      </div>
+      <button id="pl-next" class="w-10 h-10 shrink-0 rounded-full hover:bg-black/5 dark:hover:bg-white/10" aria-label="Siguiente noticia"><svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/></svg></button>
+      <button id="pl-close" class="w-10 h-10 shrink-0 rounded-full hover:bg-black/5 dark:hover:bg-white/10" aria-label="Cerrar reproductor"><svg class="w-5 h-5 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-custom mt-16 py-8 text-sm text-slate-500">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <p><b class="font-serif text-slate-900 dark:text-slate-100">5M News</b> · © 2026. Todos los derechos reservados.</p>
+      <p>Noticias resumidas para salir informado en menos de 5 minutos.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ---------- CONFIGURACIÓN ----------
+    const CATS = {
+      mundo:     { label: 'Mundo',     text: 'text-catMundo', dot: 'bg-catMundo' },
+      economia:  { label: 'Economía',  text: 'text-catEcon',  dot: 'bg-catEcon' },
+      argentina: { label: 'Argentina', text: 'text-catArg',   dot: 'bg-catArg' },
+      tech:      { label: 'Tech',      text: 'text-catTech',  dot: 'bg-catTech' }
+    };
+    const CAT_MERCADOS = { label: 'Mercados', text: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-600' };
+    const catInfo = (c) => CATS[c] || (c === 'mercados' ? CAT_MERCADOS : CATS.economia);
+
+    // ---------- UTILIDADES ----------
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmtSeg = (s) => s < 60 ? s + ' seg' : Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' min';
+    const TZ = 'America/Argentina/Buenos_Aires';
+    const catLabel = (c) => `<span class="kicker inline-flex items-center gap-1.5 ${catInfo(c).text}"><span class="w-1.5 h-1.5 rounded-full ${catInfo(c).dot}"></span>${catInfo(c).label}</span>`;
+    const tiempo = (s) => `<span class="inline-flex items-center gap-1 rounded-full bg-white border border-amber-300 text-amber-800 dark:bg-transparent dark:border-amber-500/40 dark:text-timer px-2 py-0.5 text-[11px] font-semibold"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> ${fmtSeg(s)}</span>`;
+    const ICONO_PAUSA = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>';
+    const ICONO_PLAY = '<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>';
+    const DIAS_ES = new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    let EDICION = '';
+    // "Viernes, 23 de octubre de 2026 · 07:40 hs" (arriba de cada noticia)
+    function fechaNoticia(n) {
+      const f = n.fecha || EDICION;
+      let txt = '';
+      if (f) { const t = DIAS_ES.format(new Date(f + 'T12:00:00Z')); txt = t.charAt(0).toUpperCase() + t.slice(1); }
+      if (n.hora) txt += (txt ? ' · ' : '') + n.hora + ' hs';
+      return txt ? `<p class="flex items-center gap-1.5 text-xs font-medium text-slate-500"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><time datetime="${esc(f || '')}">${esc(txt)}</time></p>` : '';
+    }
+    // Fotoperiodismo: la foto de cobertura de la nota original (nunca de stock), con crédito del fotógrafo o agencia
+    // y enlace a la nota. 16:9, con degradado inferior para que el titular superpuesto se lea sin tapar la foto.
+    const fotoOk = (n) => n.imagen && /^https:\/\//.test(n.imagen.url);
+    const creditoFoto = (im) => `<a href="${esc(urlSegura(im.enlace || im.url))}" target="_blank" rel="noopener noreferrer" title="Ver la cobertura original"
+          class="absolute top-2 right-2 max-w-[75%] truncate rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-medium text-white/90 backdrop-blur-sm hover:bg-black/75">Foto: ${esc(im.credito)}${ICONO_EXTERNO}<span class="sr-only"> (enlace externo)</span></a>`;
+    // Titular sobre la foto; si la nota no tiene foto real, el titular va como texto normal.
+    // compacta: en el celular (la mayoría del público) la foto va como miniatura al lado del titular,
+    // así todas las notas muestran su imagen sin ocupar la pantalla; desde md vuelve el formato 16:9 con titular encima.
+    function portada(n, { tam = 'text-xl', clamp = 'line-clamp-3', clases = '', compacta = false } = {}) {
+      const titulo = esc(n.titulo);
+      const h3Plano = `<h3 class="font-serif font-semibold ${tam} leading-snug text-balance">${titulo}</h3>`;
+      if (!fotoOk(n)) return h3Plano;
+      const im = n.imagen;
+      const grande = `<figure data-sinfoto="${esc(h3Plano)}" class="foto-prensa relative aspect-video overflow-hidden rounded-xl bg-slate-900 ${clases}">
+          <img src="${esc(im.url)}" alt="${esc(im.alt || n.titulo)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+               class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+               onerror="const f=this.closest('figure');f.insertAdjacentHTML('afterend',f.dataset.sinfoto);f.remove()">
+          <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.85) 100%)" aria-hidden="true"></div>
+          ${creditoFoto(im)}
+          <figcaption class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+            <h3 class="font-serif font-semibold ${tam} leading-tight text-white text-balance ${clamp}" style="text-shadow:0 1px 3px rgba(0,0,0,.45)">${titulo}</h3>
+          </figcaption>
+        </figure>`;
+      if (!compacta) return grande;
+      return `<div class="md:hidden ${clases}">
+          <div class="flex items-start gap-3">
+            <h3 class="flex-1 min-w-0 font-serif font-semibold text-[1.05rem] leading-snug">${titulo}</h3>
+            <figure class="foto-prensa relative w-[38%] max-w-[10rem] shrink-0 aspect-[4/3] overflow-hidden rounded-lg bg-slate-200 dark:bg-white/10">
+              <img src="${esc(im.url)}" alt="${esc(im.alt || n.titulo)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+                   class="absolute inset-0 w-full h-full object-cover" onerror="this.closest('figure').remove()">
+            </figure>
+          </div>
+          <a href="${esc(urlSegura(im.enlace || im.url))}" target="_blank" rel="noopener noreferrer" class="mt-1 block truncate text-right text-[10px] text-slate-500 hover:text-pulse">Foto: ${esc(im.credito)}${ICONO_EXTERNO}<span class="sr-only"> (enlace externo)</span></a>
+        </div>
+        <div class="hidden md:block">${grande}</div>`;
+    }
+    // Miniatura 16:9 (lista "Al Grano"): sólo la foto, el titular va al lado
+    function foto(n, clases) {
+      if (!fotoOk(n)) return '';
+      const im = n.imagen;
+      return `<figure class="relative overflow-hidden rounded-xl bg-slate-100 dark:bg-white/5 ${clases}">
+          <img src="${esc(im.url)}" alt="${esc(im.alt || n.titulo)}" loading="lazy" decoding="async" referrerpolicy="no-referrer"
+               class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" onerror="this.closest('figure').remove()">
+          <figcaption class="absolute inset-x-0 bottom-0 truncate bg-black/55 px-1.5 py-0.5 text-[9px] text-white/90">Foto: ${esc(im.credito)}</figcaption>
+        </figure>`;
+    }
+    const ICONO_EXTERNO = '<svg class="inline-block w-3 h-3 ml-0.5 -mt-0.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+    const urlSegura = (u) => /^https?:\/\//i.test(u) ? u : '#';
+    const fuentes = (f) => `<p class="text-xs text-slate-500"><b class="text-slate-700 dark:text-slate-300">Fuentes:</b> ${f.map((x) =>
+      `<a href="${esc(urlSegura(x.url))}" target="_blank" rel="noopener noreferrer" title="Abrir ${esc(x.nombre)} en una pestaña nueva"
+          class="underline decoration-slate-300 dark:decoration-slate-600 underline-offset-2 hover:text-pulse hover:decoration-pulse transition-colors whitespace-nowrap">${esc(x.nombre)}${ICONO_EXTERNO}<span class="sr-only"> (enlace externo, se abre en una pestaña nueva)</span></a>`
+    ).join(' <span aria-hidden="true">|</span> ')}</p>`;
+
+    // ---------- TOPBAR ----------
+    function tick() {
+      const now = new Date();
+      const f = new Intl.DateTimeFormat('es-AR', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+      $('#fecha-actual').textContent = f.charAt(0).toUpperCase() + f.slice(1);
+      $('#reloj').textContent = new Intl.DateTimeFormat('es-AR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(now);
+    }
+    tick(); setInterval(tick, 1000);
+    const larga = new Intl.DateTimeFormat('es-AR', { timeZone: TZ, dateStyle: 'full' }).format(new Date());
+    $('#fecha-larga').textContent = larga.charAt(0).toUpperCase() + larga.slice(1);
+
+    // Dólar en vivo (API pública). Si falla, queda el placeholder "$ —".
+    fetch('https://dolarapi.com/v1/dolares')
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => {
+        const fmt = (n) => '$' + new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n);
+        const html = ['oficial', 'blue', 'bolsa'].map((casa) => {
+          const d = data.find((x) => x.casa === casa);
+          if (!d) return '';
+          const label = casa === 'bolsa' ? 'MEP' : d.nombre;
+          return `<span><span class="text-slate-500">${esc(label)}</span> <b class="font-mono">${fmt(d.compra)} / ${fmt(d.venta)}</b></span>`;
+        }).join('');
+        if (html) $('#dolar').innerHTML = html;
+      })
+      .catch(() => {});
+
+    // ---------- MODO OSCURO (persistente) ----------
+    $('#btn-tema').addEventListener('click', () => {
+      const dark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('5m-theme', dark ? 'dark' : 'light'); } catch (e) {}
+    });
+
+    // ---------- NEWSLETTER (diario + semanal jueves) ----------
+    // Envía a la función /api/subscribe (Netlify). Doble opt-in: llega un email de confirmación.
+    $('#form-newsletter').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const err = $('#nl-error');
+      const btn = $('#nl-submit');
+      const email = form.email.value.trim();
+      const diario = form.resumen_diario.checked;
+      const semanal = form.analisis_semanal_jueves.checked;
+      const mostrarError = (m) => { err.textContent = m; err.classList.remove('hidden'); };
+      err.classList.add('hidden');
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return mostrarError('Ingresá un email válido.');
+      if (!diario && !semanal) return mostrarError('Elegí al menos una opción: briefing diario o resumen de los jueves.');
+
+      btn.disabled = true; btn.textContent = 'Suscribiendo…';
+      try {
+        let data = { ok: true, demo: true };
+        if (location.protocol !== 'file:') {
+          const res = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, diario, semanal, website: form.website.value })
+          });
+          data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'No pudimos registrar tu suscripción. Probá de nuevo.');
+        }
+        const plan = [diario && 'el briefing diario a las 7:00 AM', semanal && 'el resumen de los jueves'].filter(Boolean).join(' y ');
+        $('#nl-ok-titulo').textContent = data.enEspera ? '¡Te anotamos!' : data.confirmed ? 'Preferencias actualizadas.' : '¡Casi listo! Revisá tu email.';
+        $('#nl-ok-detalle').textContent = data.demo
+          ? 'Vista previa local: no se envió ningún dato.'
+          : data.enEspera
+            ? 'Estamos terminando de activar los envíos. En cuanto estén listos te llega un email para confirmar y después vas a recibir ' + plan + '.'
+            : (data.confirmed ? 'Vas a recibir ' + plan + '.' : 'Te enviamos un enlace para confirmar. Después vas a recibir ' + plan + '.');
+        form.classList.add('hidden');
+        $('#nl-ok').classList.remove('hidden');
+      } catch (ex) {
+        mostrarError(ex.message || 'Ocurrió un error. Probá de nuevo.');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Suscribirme gratis';
+      }
+    });
+
+    // Aviso al volver desde los enlaces del email (confirmación / baja)
+    (function () {
+      const estado = new URLSearchParams(location.search).get('suscripcion');
+      const textos = {
+        confirmada: ['Suscripción confirmada', 'Desde mañana recibís tu briefing. ¡Gracias por sumarte a la prueba!', 'emerald'],
+        baja: ['Te diste de baja', 'No vas a recibir más emails de 5M News. Podés volver a suscribirte cuando quieras.', 'slate'],
+        invalida: ['Enlace inválido o vencido', 'Probá suscribirte de nuevo desde el formulario.', 'red']
+      };
+      if (!textos[estado]) return;
+      const [t, d, c] = textos[estado];
+      const box = $('#aviso-suscripcion');
+      box.innerHTML = `<div class="rounded-2xl border border-custom bg-card p-4 flex items-start gap-3">
+          <span class="mt-1 w-2 h-2 rounded-full shrink-0 ${c === 'emerald' ? 'bg-emerald-500' : c === 'red' ? 'bg-pulse' : 'bg-slate-400'}"></span>
+          <div class="flex-1"><p class="font-semibold">${t}</p><p class="text-sm text-slate-600 dark:text-slate-300">${d}</p></div>
+          <button class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" aria-label="Cerrar aviso" onclick="this.closest('#aviso-suscripcion').classList.add('hidden')"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+        </div>`;
+      box.classList.remove('hidden');
+      history.replaceState(null, '', location.pathname);
+    })();
+
+    // ---------- PROGRESO DE LECTURA ----------
+    (function () {
+      const barra = $('#progreso-lectura-barra');
+      let pendiente = false;
+      const medir = () => {
+        pendiente = false;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        barra.style.transform = `scaleX(${max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0})`;
+      };
+      const pedir = () => { if (!pendiente) { pendiente = true; requestAnimationFrame(medir); } };
+      window.addEventListener('scroll', pedir, { passive: true });
+      window.addEventListener('resize', pedir);
+      // El alto cambia al cargar el briefing, abrir Mercados o cambiar de sección
+      if ('ResizeObserver' in window) new ResizeObserver(pedir).observe(document.body);
+      medir();
+    })();
+
+    // ---------- MERCADOS: panel desplegable (cerrado por defecto) ----------
+    $('#mercados-toggle').addEventListener('click', () => {
+      const abrir = $('#mercados-toggle').getAttribute('aria-expanded') !== 'true';
+      $('#mercados-toggle').setAttribute('aria-expanded', String(abrir));
+      $('#mercados-panel').hidden = !abrir;
+      $('#mercados-toggle-texto').textContent = abrir ? 'Ocultar mercados' : 'Ver mercados';
+      $('#mercados-chevron').classList.toggle('rotate-180', abrir);
+      if (abrir) { montarTVVisibles(); activarVisuales($('#mercados-panel')); }
+    });
+
+    // ---------- COMPONENTES VISUALES ----------
+    let vizId = 0;
+    const nf = (v, dec) => v.toLocaleString('es-AR', { minimumFractionDigits: dec ?? (Number.isInteger(v) ? 0 : 1), maximumFractionDigits: 2 });
+    const conSigno = (v, u) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v)) + (u || '');
+    const ICONO_TEND = {
+      sube: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 5l8 12H4z"/></svg>',
+      baja: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 19 4 7h16z"/></svg>',
+      neutral: '<svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="10" width="14" height="4" rx="1"/></svg>'
+    };
+
+    // Datos clave: tarjetas que se expanden al hacer clic y muestran el contexto de la cifra
+    function datosClave(datos, compacto) {
+      if (!datos || !datos.length) return '';
+      const id = 'dc' + (++vizId);
+      const tend = (d) => d.delta ? `<span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200"><span class="${d.tendencia === 'sube' ? 'text-[color:var(--viz-pos)]' : d.tendencia === 'baja' ? 'text-[color:var(--viz-neg)]' : 'text-slate-400'}">${ICONO_TEND[d.tendencia] || ICONO_TEND.neutral}</span>${esc(d.delta)}</span>` : '';
+      if (compacto) {
+        const filas = datos.map((d) => `
+          <button type="button" class="dato-clave w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-white/5 transition-colors aria-expanded:bg-slate-50 dark:aria-expanded:bg-white/5"
+            aria-expanded="false" aria-controls="${id}-det" data-detalle="${esc(d.detalle || '')}" data-grupo="${id}">
+            <span class="text-xs text-slate-600 dark:text-slate-300">${esc(d.label)}</span>
+            <span class="flex items-center gap-2 shrink-0"><b class="text-sm tabular-nums">${esc(d.valor)}</b>${tend(d)}
+              <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>
+          </button>`).join('');
+        return `<div class="mt-3">
+            <p class="kicker text-slate-500 mb-1.5">Datos clave</p>
+            <div class="rounded-xl border border-custom bg-card divide-custom overflow-hidden">${filas}</div>
+            <p id="${id}-det" class="hidden mt-2 rounded-xl border border-custom bg-card p-3 text-xs text-slate-700 dark:text-slate-200" role="region" aria-live="polite"></p>
+          </div>`;
+      }
+      const tiles = datos.map((d, i) => `
+        <button type="button" class="dato-clave group/dato text-left rounded-xl border border-custom bg-card p-3 hover:border-slate-400 dark:hover:border-slate-500 hover:-translate-y-0.5 hover:shadow-sm transition aria-expanded:border-slate-900 dark:aria-expanded:border-slate-100"
+          aria-expanded="false" aria-controls="${id}-det" data-detalle="${esc(d.detalle || '')}" data-grupo="${id}">
+          <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500">${esc(d.label)}</span>
+          <span class="block font-semibold text-lg leading-tight mt-0.5">${esc(d.valor)}</span>
+          ${d.delta ? `<span class="mt-0.5 block">${tend(d)}</span>` : ''}
+          ${d.detalle ? '<span class="mt-1 block text-[11px] text-slate-400 group-aria-expanded/dato:hidden">Tocá para ver más</span>' : ''}
+        </button>`).join('');
+      return `<div class="mt-4">
+          <p class="kicker text-slate-500 mb-2">Datos clave</p>
+          <div class="grid gap-2 ${datos.length >= 3 ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}">${tiles}</div>
+          <p id="${id}-det" class="hidden mt-2 rounded-xl border border-custom bg-card p-3 text-sm text-slate-700 dark:text-slate-200" role="region" aria-live="polite"></p>
+        </div>`;
+    }
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('.dato-clave');
+      if (!b) return;
+      const panel = document.getElementById(b.getAttribute('aria-controls'));
+      const abrir = b.getAttribute('aria-expanded') !== 'true';
+      document.querySelectorAll(`.dato-clave[data-grupo="${b.dataset.grupo}"]`).forEach((x) => x.setAttribute('aria-expanded', 'false'));
+      b.setAttribute('aria-expanded', String(abrir));
+      panel.textContent = abrir ? b.dataset.detalle : '';
+      panel.classList.toggle('hidden', !abrir || !b.dataset.detalle);
+    });
+
+    // Gráfico de barras horizontales (divergente si hay signos): animado, con tooltip por barra
+    function graficoBarras(g) {
+      const vals = g.puntos.map((p) => p.valor);
+      const maxPos = Math.max(0, ...vals), maxNeg = Math.max(0, ...vals.map((v) => -v));
+      const total = maxPos + maxNeg || 1;
+      // Se reserva un 18% a cada lado con valores para que la cifra quepa junto a la barra
+      const izq = maxNeg ? 18 : 0, der = maxPos ? 18 : 0;
+      const util = 100 - izq - der;
+      const cero = izq + (maxNeg / total) * util; // posición del eje 0 (%)
+      const filas = g.puntos.map((p) => {
+        const w = (Math.abs(p.valor) / total) * util;
+        const neg = p.valor < 0;
+        const texto = conSigno(p.valor, g.unidad);
+        return `<div class="viz-fila grid grid-cols-[minmax(0,38%)_1fr] items-center gap-2 py-1 rounded outline-none" tabindex="0"
+              data-tip-titulo="${esc(p.label)}" data-tip-valor="${esc(texto)}">
+            <span class="text-xs text-slate-600 dark:text-slate-300 truncate" title="${esc(p.label)}">${esc(p.label)}</span>
+            <span class="relative block h-5">
+              <span class="absolute top-0 bottom-0 w-px bg-slate-300 dark:bg-slate-600" style="left:${cero}%"></span>
+              <span class="viz-barra absolute top-1/2 -translate-y-1/2 h-3.5 ${neg ? 'rounded-l' : 'rounded-r'}"
+                style="--w:${w}%; ${neg ? `right:${100 - cero}%` : `left:${cero}%`}; background:var(${neg ? '--viz-neg' : '--viz-pos'})"></span>
+              <span class="absolute top-1/2 -translate-y-1/2 text-xs font-semibold tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap"
+                style="${neg ? `right:calc(${100 - cero + w}% + 6px)` : `left:calc(${cero + w}% + 6px)`}">${esc(texto)}</span>
+            </span>
+          </div>`;
+      }).join('');
+      // Margen para que las etiquetas de los extremos no se corten
+      return `<div class="viz-observar">${filas}</div>`;
+    }
+
+    // Gráfico de líneas (2+ series): leyenda, guía vertical que sigue al puntero y tooltip con todas las series
+    function graficoLinea(g, compacto) {
+      const W = compacto ? 340 : 560, H = compacto ? 190 : 200, pl = 32, pr = 16, pt = 12, pb = 26;
+      const todos = g.series.flatMap((s) => s.valores);
+      const paso = 2;
+      const min = Math.floor((Math.min(...todos) - 2) / paso) * paso, max = Math.ceil((Math.max(...todos) + 2) / paso) * paso;
+      const x = (i) => pl + (i * (W - pl - pr)) / Math.max(1, g.etiquetas.length - 1);
+      const y = (v) => pt + ((max - v) * (H - pt - pb)) / (max - min || 1);
+      const colores = ['var(--viz-1)', 'var(--viz-2)'];
+      let grid = '';
+      for (let v = min; v <= max; v += paso) {
+        grid += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--viz-grid)" stroke-width="1"/>
+                 <text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end" class="fill-slate-500" font-size="11">${v}</text>`;
+      }
+      const ejeX = g.etiquetas.map((e, i) => `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" class="fill-slate-500" font-size="11">${esc(e)}</text>`).join('');
+      const series = g.series.map((s, k) => {
+        const pts = s.valores.map((v, i) => [x(i), y(v)]);
+        const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+        let len = 0; for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        const fin = pts[pts.length - 1];
+        return `<path class="serie" d="${d}" fill="none" stroke="${colores[k % 2]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="--len:${Math.ceil(len)}"/>
+                <circle cx="${fin[0]}" cy="${fin[1]}" r="4" fill="${colores[k % 2]}" stroke="var(--viz-surface)" stroke-width="2"/>`;
+      }).join('');
+      const datosTip = encodeURIComponent(JSON.stringify({ etiquetas: g.etiquetas, series: g.series.map((s) => ({ n: s.nombre, v: s.valores })), u: g.unidad || '' }));
+      const leyenda = g.series.map((s, k) => `<span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-0.5 rounded" style="background:${colores[k % 2]}"></span>${esc(s.nombre)}</span>`).join('');
+      const tabla = `<details class="mt-1 text-xs"><summary class="cursor-pointer text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">Ver datos en tabla</summary>
+          <table class="mt-2 w-full text-left tabular-nums"><thead><tr class="text-slate-500"><th class="py-1 font-semibold">Fecha</th>${g.series.map((s) => `<th class="py-1 font-semibold">${esc(s.nombre)}</th>`).join('')}</tr></thead>
+          <tbody>${g.etiquetas.map((e, i) => `<tr class="border-t border-custom"><td class="py-1">${esc(e)}</td>${g.series.map((s) => `<td class="py-1">${nf(s.valores[i])}${esc(g.unidad || '')}</td>`).join('')}</tr>`).join('')}</tbody></table></details>`;
+      return `<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-700 dark:text-slate-200 mb-1">${leyenda}</div>
+        <svg class="viz-linea viz-observar w-full h-auto outline-none" viewBox="0 0 ${W} ${H}" tabindex="0" role="img"
+             aria-label="${esc(g.titulo)}" data-linea="${datosTip}" data-x0="${pl}" data-x1="${W - pr}">
+          ${grid}${ejeX}
+          <line class="guia" x1="0" x2="0" y1="${pt}" y2="${H - pb}" stroke="#94a3b8" stroke-width="1" opacity="0"/>
+          ${series}
+          <rect x="${pl - 10}" y="0" width="${W - pl - pr + 20}" height="${H}" fill="transparent"/>
+        </svg>${tabla}`;
+    }
+
+    function grafico(g, compacto) {
+      if (!g) return '';
+      const cuerpo = g.tipo === 'linea' ? graficoLinea(g, compacto) : graficoBarras(g);
+      return `<figure class="mt-4 rounded-xl border border-custom bg-card p-4">
+          <figcaption class="text-sm font-semibold mb-2">${esc(g.titulo)}</figcaption>
+          ${cuerpo}
+          ${g.fuente ? `<p class="mt-2 text-[11px] text-slate-500">Fuente: ${esc(g.fuente)}</p>` : ''}
+        </figure>`;
+    }
+    const visual = (n, compacto) => datosClave(n.datos, compacto) + grafico(n.grafico, compacto);
+
+    // Animación al entrar en pantalla
+    const obsViz = 'IntersectionObserver' in window ? new IntersectionObserver((ents) => ents.forEach((en) => {
+      if (en.isIntersecting) { en.target.classList.add('viz-visible'); obsViz.unobserve(en.target); }
+    }), { threshold: 0.15 }) : null;
+    function activarVisuales(raiz) {
+      (raiz || document).querySelectorAll('.viz-observar:not(.viz-listo)').forEach((el) => {
+        el.classList.add('viz-listo');
+        obsViz ? obsViz.observe(el) : el.classList.add('viz-visible');
+      });
+    }
+
+    // Tooltip compartido (contenido con textContent: los rótulos son datos)
+    const tip = $('#viz-tooltip');
+    function mostrarTip(x, y, filas) {
+      tip.replaceChildren(...filas.map(([valor, nombre, color]) => {
+        const r = document.createElement('div'); r.className = 'flex items-center gap-2 py-0.5';
+        if (color) { const k = document.createElement('span'); k.className = 'inline-block w-3 h-0.5 rounded'; k.style.background = color; r.append(k); }
+        const v = document.createElement('b'); v.className = 'text-slate-900 dark:text-slate-100 tabular-nums'; v.textContent = valor;
+        const n = document.createElement('span'); n.className = 'text-slate-500'; n.textContent = nombre;
+        r.append(v, n); return r;
+      }));
+      tip.classList.add('on');
+      const r = tip.getBoundingClientRect();
+      tip.style.left = Math.min(window.innerWidth - r.width - 8, x + 14) + 'px';
+      tip.style.top = Math.max(8, y - r.height - 10) + 'px';
+    }
+    const ocultarTip = () => tip.classList.remove('on');
+    function tipBarra(fila) {
+      const r = fila.getBoundingClientRect();
+      mostrarTip(r.left + r.width * 0.5, r.top, [[fila.dataset.tipValor, fila.dataset.tipTitulo]]);
+    }
+    document.addEventListener('pointerover', (e) => { const f = e.target.closest('.viz-fila'); if (f) tipBarra(f); });
+    document.addEventListener('pointerout', (e) => { if (e.target.closest('.viz-fila') && !e.relatedTarget?.closest?.('.viz-fila')) ocultarTip(); });
+    document.addEventListener('focusin', (e) => { const f = e.target.closest('.viz-fila'); if (f) tipBarra(f); });
+    document.addEventListener('focusout', (e) => { if (e.target.closest('.viz-fila, .viz-linea')) ocultarTip(); });
+
+    function guiaLinea(svg, i, cx, cy) {
+      const d = JSON.parse(decodeURIComponent(svg.dataset.linea));
+      const x0 = +svg.dataset.x0, x1 = +svg.dataset.x1;
+      const xv = x0 + (i * (x1 - x0)) / Math.max(1, d.etiquetas.length - 1);
+      const g = svg.querySelector('.guia'); g.setAttribute('x1', xv); g.setAttribute('x2', xv); g.setAttribute('opacity', '0.6');
+      svg.dataset.idx = i;
+      mostrarTip(cx, cy, [[d.etiquetas[i], ''], ...d.series.map((s, k) => [nf(s.v[i]) + d.u, s.n, k ? 'var(--viz-2)' : 'var(--viz-1)'])]);
+    }
+    document.addEventListener('pointermove', (e) => {
+      const svg = e.target.closest && e.target.closest('.viz-linea');
+      if (!svg) return;
+      const d = JSON.parse(decodeURIComponent(svg.dataset.linea));
+      const r = svg.getBoundingClientRect();
+      const escala = r.width / svg.viewBox.baseVal.width;
+      const x0 = +svg.dataset.x0 * escala, x1 = +svg.dataset.x1 * escala;
+      const i = Math.max(0, Math.min(d.etiquetas.length - 1, Math.round(((e.clientX - r.left - x0) / (x1 - x0)) * (d.etiquetas.length - 1))));
+      guiaLinea(svg, i, e.clientX, e.clientY);
+    });
+    document.addEventListener('pointerleave', (e) => {
+      if (e.target.classList && e.target.classList.contains('viz-linea')) { e.target.querySelector('.guia').setAttribute('opacity', '0'); ocultarTip(); }
+    }, true);
+    document.addEventListener('keydown', (e) => {
+      const svg = e.target.closest && e.target.closest('.viz-linea');
+      if (!svg || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      const n = JSON.parse(decodeURIComponent(svg.dataset.linea)).etiquetas.length;
+      const i = Math.max(0, Math.min(n - 1, (+svg.dataset.idx || 0) + (e.key === 'ArrowRight' ? 1 : -1)));
+      const r = svg.getBoundingClientRect();
+      guiaLinea(svg, i, r.left + r.width / 2, r.top + 20);
+      e.preventDefault();
+    });
+
+    // ---------- TRADINGVIEW: cotizaciones en tiempo real, recargadas cada 10 minutos ----------
+    const TV_REFRESCO_MS = 10 * 60 * 1000;
+    const TV_GRUPOS = [
+      { name: 'Índices', symbols: [{ name: 'FOREXCOM:SPXUSD', displayName: 'S&P 500' }, { name: 'FOREXCOM:NSXUSD', displayName: 'Nasdaq 100' }, { name: 'FOREXCOM:DJI', displayName: 'Dow Jones' }] },
+      { name: 'Commodities', symbols: [{ name: 'TVC:UKOIL', displayName: 'Petróleo Brent' }, { name: 'TVC:USOIL', displayName: 'Petróleo WTI' }, { name: 'TVC:GOLD', displayName: 'Oro' }] },
+      { name: 'Tasas', symbols: [{ name: 'TVC:US10Y', displayName: 'Bono EE.UU. 10 años' }] },
+      { name: 'ADRs argentinos', symbols: [{ name: 'NYSE:YPF', displayName: 'YPF' }, { name: 'NASDAQ:GGAL', displayName: 'Grupo Galicia' }, { name: 'NYSE:BMA', displayName: 'Banco Macro' }, { name: 'NYSE:PAM', displayName: 'Pampa Energía' }, { name: 'NYSE:VIST', displayName: 'Vista Energy' }] },
+      { name: 'Tecnológicas (CEDEARs)', symbols: [{ name: 'NASDAQ:AAPL', displayName: 'Apple' }, { name: 'NASDAQ:NVDA', displayName: 'Nvidia' }, { name: 'NASDAQ:MSFT', displayName: 'Microsoft' }, { name: 'NASDAQ:META', displayName: 'Meta' }, { name: 'NASDAQ:MELI', displayName: 'MercadoLibre' }, { name: 'NASDAQ:TSLA', displayName: 'Tesla' }] },
+      { name: 'Cripto', symbols: [{ name: 'BITSTAMP:BTCUSD', displayName: 'Bitcoin' }] },
+    ];
+    let tvUltima = null;
+    const horaCorta = (d) => new Intl.DateTimeFormat('es-AR', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(d);
+
+    function montarTV(cont) {
+      const oscuro = document.documentElement.classList.contains('dark');
+      const tipo = cont.dataset.tv;
+      const base = { colorTheme: oscuro ? 'dark' : 'light', isTransparent: true, locale: 'es' };
+      // Cinta de cotizaciones: una sola línea, sin scroll interno (no traba el deslizamiento de la página)
+      const config = { ...base, symbols: TV_GRUPOS.flatMap((g) => g.symbols.map((x) => ({ proName: x.name, title: x.displayName }))), showSymbolLogo: true, displayMode: 'adaptive' };
+      const archivo = 'embed-widget-ticker-tape.js';
+      const w = document.createElement('div'); w.className = 'tradingview-widget-container h-full';
+      const interno = document.createElement('div'); interno.className = 'tradingview-widget-container__widget h-full';
+      const sc = document.createElement('script');
+      sc.src = 'https://s3.tradingview.com/external-embedding/' + archivo; sc.async = true;
+      sc.textContent = JSON.stringify(config);
+      w.append(interno, sc);
+      cont.replaceChildren(w);
+      cont.dataset.montado = '1';
+    }
+    function actualizarEtiquetasTV() {
+      if (!tvUltima) return;
+      const prox = new Date(tvUltima.getTime() + TV_REFRESCO_MS);
+      document.querySelectorAll('[data-tv-hora]').forEach((el) => {
+        el.textContent = `Última actualización: ${horaCorta(tvUltima)} hs · próxima: ${horaCorta(prox)} hs`;
+      });
+    }
+    // Monta los widgets visibles que todavía no se cargaron (los ocultos se montan al mostrarse)
+    function montarTVVisibles() {
+      let alguno = false;
+      document.querySelectorAll('[data-tv]').forEach((c) => {
+        if (!c.dataset.montado && c.offsetParent !== null) { montarTV(c); alguno = true; }
+      });
+      if (alguno) { if (!tvUltima) tvUltima = new Date(); actualizarEtiquetasTV(); }
+    }
+    // Cada 10 minutos: recarga los widgets montados y actualiza la hora
+    function refrescarTV() {
+      tvUltima = new Date();
+      document.querySelectorAll('[data-tv][data-montado]').forEach((c) => {
+        if (c.offsetParent !== null) montarTV(c); else delete c.dataset.montado; // los ocultos se recargan al volver a verse
+      });
+      actualizarEtiquetasTV();
+    }
+    setInterval(refrescarTV, TV_REFRESCO_MS);
+    // Al cambiar el tema, los widgets se recargan con los colores correctos
+    new MutationObserver(() => document.querySelectorAll('[data-tv][data-montado]').forEach((c) => c.offsetParent !== null ? montarTV(c) : delete c.dataset.montado))
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    const ETIQUETA_TV = `
+      <div class="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-card px-3 py-2 mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
+        <span class="inline-flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
+          <span class="live-dot w-2 h-2 rounded-full bg-emerald-600"></span>Cotizaciones en tiempo real - Se actualizan cada 10 minutos (vía TradingView)
+        </span>
+        <span class="text-slate-500" data-tv-hora>Cargando cotizaciones…</span>
+      </div>`;
+    const NOTA_TV = '<p class="mt-2 text-[11px] text-slate-500">Algunas bolsas informan sus precios con demora en los widgets de TradingView. Información de referencia; no es una recomendación de inversión.</p>';
+    const bloqueTV = () => `${ETIQUETA_TV}<div data-tv="cinta" class="rounded-xl border border-custom bg-card overflow-hidden" style="height:78px"></div>${NOTA_TV}`;
+
+    // ---------- RENDER DEL BRIEFING ----------
+    // El contenido vive en briefing.json: lo usan esta página y los emails automáticos.
+    function render({ edicion: EDICION_DATO, noticias: NOTICIAS, tendencias: TENDENCIAS, mercados: MERCADOS, actualizado: ACTUALIZADO }) {
+      VERSION_ACTUAL = ACTUALIZADO || '';
+      EDICION = EDICION_DATO || '';
+      const NOT_MERCADOS = (MERCADOS && MERCADOS.noticias) || [];
+      // Valida la regla editorial del titular (máx. 12 palabras)
+      [...NOTICIAS, ...NOT_MERCADOS].forEach((n) => {
+        if (n.titulo.trim().split(/\s+/).length > 12) console.warn('[5M] Titular > 12 palabras:', n.titulo);
+      });
+
+      const todas = [...NOTICIAS, ...NOT_MERCADOS];
+      const total = todas.reduce((a, n) => a + n.seg, 0);
+      $('#lectura-total').textContent = fmtSeg(total);
+      $('#cant-noticias').textContent = todas.length + ' noticias · ' + fmtSeg(total) + ' de lectura';
+
+      // ---------- HERO ----------
+      const hero = NOTICIAS.find((n) => n.hero) || NOTICIAS[0];
+      const horaAct = ACTUALIZADO ? new Date(ACTUALIZADO).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit', hour12: false }) : hero.hora;
+      $('#hero-hora').textContent = horaAct ? 'Actualizado ' + horaAct + ' hs · se actualiza cada hora' : '';
+      $('#hero').innerHTML = `
+        <article class="group p-6 sm:p-8 rounded-2xl border border-custom bg-card shadow-sm">
+          <div class="mb-3">${fechaNoticia(hero)}</div>
+          <div class="flex items-center justify-between gap-2 mb-4">${catLabel(hero.cat)}${tiempo(hero.seg)}</div>
+          ${portada(hero, { tam: 'text-2xl sm:text-4xl tracking-tight', clamp: 'line-clamp-4 sm:line-clamp-3' })}
+          <p class="text-slate-600 dark:text-slate-300 text-lg mt-3">${esc(hero.bajada)}</p>
+          ${visual(hero)}
+          <div class="mb-6"></div>
+          <dl class="grid gap-3 sm:grid-cols-3">
+            ${[['¿Qué pasó?', hero.que], ['¿A quién afecta?', hero.quien], ['¿Por qué importa hoy?', hero.porque]].map(([t, d]) => `
+              <div class="rounded-xl bg-soft p-4">
+                <dt class="font-bold text-sm">${t}</dt>
+                <dd class="text-sm text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">${esc(d)}</dd>
+              </div>`).join('')}
+          </dl>
+          <div class="mt-5 pt-4 border-t border-custom">${fuentes(hero.fuentes)}</div>
+        </article>`;
+
+      // ---------- 4 NOTICIAS CLAVE ----------
+      const clave = NOTICIAS.filter((n) => n.clave).slice(0, 4);
+      $('#grid-clave').innerHTML = clave.map((n, i) => `
+        <article class="group p-5 rounded-2xl border border-custom bg-card shadow-sm flex flex-col gap-3 hover:shadow-md transition-shadow">
+          ${fechaNoticia(n)}
+          <div class="flex justify-between items-center">
+            <span class="flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-white border border-slate-900 text-slate-900 dark:bg-transparent dark:border-slate-100 dark:text-slate-100 grid place-items-center text-xs font-bold font-mono">${i + 2}</span>${catLabel(n.cat)}</span>
+            ${tiempo(n.seg)}
+          </div>
+          ${portada(n, { tam: 'text-lg sm:text-xl', compacta: true })}
+          <p class="text-sm text-slate-600 dark:text-slate-300">${esc(n.bajada)}</p>
+          ${visual(n, true)}
+          <div class="text-xs space-y-2 text-slate-600 dark:text-slate-300 bg-soft rounded-xl p-3">
+            <p><b class="text-slate-900 dark:text-slate-100">¿Qué pasó?</b> ${esc(n.que)}</p>
+            <p><b class="text-slate-900 dark:text-slate-100">¿A quién afecta?</b> ${esc(n.quien)}</p>
+            <p><b class="text-slate-900 dark:text-slate-100">¿Por qué importa?</b> ${esc(n.porque)}</p>
+          </div>
+          <div class="mt-auto">${fuentes(n.fuentes)}</div>
+        </article>`).join('');
+
+      // ---------- PIEZAS REUTILIZABLES ----------
+      const pct = (v) => Math.abs(v).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%';
+      const colorVar = (v) => v == null ? 'text-slate-500' : v > 0 ? 'text-emerald-700 dark:text-emerald-400' : v < 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-500';
+      const cambioVar = (m) => m.var == null ? esc(m.detalle || '') : `${m.var > 0 ? '▲' : m.var < 0 ? '▼' : '■'} ${pct(m.var)}`;
+      const tarjetaIndicador = (m) => `<div class="rounded-xl border border-custom bg-card p-3 flex flex-col gap-0.5 hover:border-slate-400 dark:hover:border-slate-500 transition-colors">
+          <p class="kicker text-slate-500">${esc(m.grupo)}</p>
+          <p class="text-sm font-semibold leading-tight">${esc(m.nombre)}</p>
+          <p class="font-mono text-lg font-bold tabular-nums">${esc(m.valor)}</p>
+          <p class="flex items-center justify-between gap-2 text-xs"><span class="${colorVar(m.var)} font-semibold">${cambioVar(m)}</span><span class="text-slate-500">${esc(m.hora)}</span></p>
+        </div>`;
+      // Nota completa (vista de sección): titular, bajada, las 3 preguntas y fuentes
+      const tarjetaCompleta = (n) => `
+        <article class="group p-5 sm:p-6 rounded-2xl border border-custom bg-card hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-md transition">
+          <div class="mb-3">${fechaNoticia(n)}</div>
+          <div class="flex justify-between items-center gap-2 mb-3">${catLabel(n.cat)}${tiempo(n.seg)}</div>
+          <div class="${fotoOk(n) ? 'md:grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:gap-5 md:items-start' : ''}">
+            ${portada(n, { tam: 'text-lg sm:text-xl', clases: 'mb-3 md:mb-0', compacta: true })}
+            <p class="text-slate-600 dark:text-slate-300 ${fotoOk(n) ? '' : 'mt-2'}">${esc(n.bajada)}</p>
+          </div>
+          ${visual(n)}
+          <dl class="mt-4 grid gap-3 sm:grid-cols-3">
+            ${[['¿Qué pasó?', n.que], ['¿A quién afecta?', n.quien], ['¿Por qué importa hoy?', n.porque]].map(([t, d]) => `
+              <div class="rounded-xl bg-soft p-3.5"><dt class="font-bold text-sm">${t}</dt><dd class="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">${esc(d)}</dd></div>`).join('')}
+          </dl>
+          <div class="mt-4 pt-3 border-t border-custom">${fuentes(n.fuentes)}</div>
+        </article>`;
+
+      // Indicadores locales (no están en TradingView): riesgo país, Merval y dólar, con su fecha
+      const LOCALES = (MERCADOS?.indicadores || []).filter((m) => ['Argentina', 'Dólar'].includes(m.grupo));
+      const bloqueLocales = LOCALES.length ? `
+        <p class="kicker text-slate-500 mt-6 mb-2">Datos locales</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">${LOCALES.map(tarjetaIndicador).join('')}</div>
+        <p class="mt-2 text-[11px] text-slate-500">${esc(MERCADOS.nota || '')}</p>` : '';
+
+      // ---------- MERCADOS (bloque desplegable de la portada) ----------
+      if (MERCADOS) {
+        $('#mercados-nota').innerHTML = bloqueTV();
+        $('#mercados-indicadores').outerHTML = `<div id="mercados-indicadores">${bloqueLocales}</div>`;
+        $('#mercados-noticias').innerHTML = NOT_MERCADOS.map((n) => `
+          <article class="group p-4 rounded-2xl border border-custom bg-card flex flex-col gap-2.5">
+            ${fechaNoticia(n)}
+            <div class="flex justify-between items-center gap-2">${catLabel(n.cat)}${tiempo(n.seg)}</div>
+            ${portada(n, { tam: 'text-lg', compacta: true })}
+            <p class="text-sm text-slate-600 dark:text-slate-300">${esc(n.bajada)}</p>
+            ${visual(n, true)}
+            <div class="text-xs space-y-2 text-slate-600 dark:text-slate-300 bg-soft rounded-xl p-3">
+              <p><b class="text-slate-900 dark:text-slate-100">¿Qué pasó?</b> ${esc(n.que)}</p>
+              <p><b class="text-slate-900 dark:text-slate-100">¿A quién afecta?</b> ${esc(n.quien)}</p>
+              <p><b class="text-slate-900 dark:text-slate-100">¿Por qué importa?</b> ${esc(n.porque)}</p>
+            </div>
+            <div class="mt-auto">${fuentes(n.fuentes)}</div>
+          </article>`).join('');
+        if (MERCADOS.fuentesDatos) $('#mercados-fuentes').innerHTML = fuentes(MERCADOS.fuentesDatos).replace('Fuentes:', 'Datos:');
+      } else {
+        $('#mercados-portada').classList.add('hidden');
+      }
+
+      // ---------- FEED "AL GRANO" ----------
+      let filtro = 'mundo'; // pestaña por defecto: primera categoría temática
+      function renderFiltros() {
+        const ops = Object.entries(CATS).map(([k, v]) => [k, v.label]); // Mundo, Economía, Argentina, Tech
+        $('#filtros').innerHTML = ops.map(([id, label]) => `
+          <button role="tab" aria-selected="${filtro === id}" data-f="${id}"
+            class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${filtro === id ? 'bg-white text-pulse border-pulse dark:bg-transparent' : 'border-custom hover:bg-black/5 dark:hover:bg-white/10'}">${label}</button>`).join('');
+      }
+      function renderFeed() {
+        const items = NOTICIAS.filter((n) => n !== hero)
+          .filter((n) => n.cat === filtro)
+          .sort((a, b) => b.hora.localeCompare(a.hora));
+        $('#feed').innerHTML = items.length ? items.map((n) => `
+          <li class="group grid ${fotoOk(n) ? 'grid-cols-[1fr_7rem] sm:grid-cols-[1fr_11rem]' : 'grid-cols-1'} gap-4 py-4">
+            <div class="space-y-1.5 min-w-0">
+              ${fechaNoticia(n)}
+              <div class="flex items-center gap-3">${catLabel(n.cat)}${tiempo(n.seg)}</div>
+              <h3 class="font-serif font-semibold text-lg leading-snug">${esc(n.titulo)}</h3>
+              <p class="text-sm text-slate-600 dark:text-slate-300">${esc(n.bajada)}</p>
+              ${fuentes(n.fuentes)}
+              <details class="group/det">
+                <summary class="cursor-pointer list-none text-xs font-semibold text-pulse">¿Qué pasó? <span class="inline-block transition-transform group-open/det:rotate-180">▾</span></summary>
+                <p class="mt-2 rounded-lg bg-soft p-3 text-sm">${esc(n.que)}</p>
+              </details>
+            </div>
+            ${foto(n, 'aspect-video self-start')}
+          </li>`).join('') : '<li class="py-8 text-center text-sm text-slate-500">Sin noticias en esta categoría hoy.</li>';
+      }
+      $('#filtros').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-f]');
+        if (!b) return;
+        filtro = b.dataset.f;
+        renderFiltros(); renderFeed();
+      });
+      renderFiltros(); renderFeed();
+
+      // ---------- SECCIONES ----------
+      const SECCIONES = [
+        { id: 'portada',   label: 'Portada',   info: { text: 'text-pulse', dot: 'bg-pulse' },
+          hover: 'hover:text-pulse hover:border-pulse', activa: 'text-pulse border-pulse' },
+        { id: 'argentina', label: 'Argentina', info: CATS.argentina, hover: 'hover:text-catArg hover:border-catArg', activa: 'text-catArg border-catArg' },
+        { id: 'mundo',     label: 'Mundo',     info: CATS.mundo,     hover: 'hover:text-catMundo hover:border-catMundo', activa: 'text-catMundo border-catMundo' },
+        { id: 'economia',  label: 'Economía',  info: CATS.economia,  hover: 'hover:text-catEcon hover:border-catEcon', activa: 'text-catEcon border-catEcon' },
+        { id: 'tech',      label: 'Tech',      info: CATS.tech,      hover: 'hover:text-catTech hover:border-catTech', activa: 'text-catTech border-catTech' },
+        { id: 'mercados',  label: 'Mercados',  info: CAT_MERCADOS,   hover: 'hover:text-amber-700 hover:border-amber-600', activa: 'text-amber-700 border-amber-600' },
+      ];
+      const notasDe = (id) => id === 'mercados' ? NOT_MERCADOS : id === 'portada' ? todas : NOTICIAS.filter((n) => n.cat === id);
+      const flecha = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+
+      // Adelanto que se despliega al pasar el mouse (sólo escritorio)
+      function adelanto(sec, alineacion) {
+        if (sec.id === 'portada') return '';
+        const notas = notasDe(sec.id);
+        const claves = sec.id === 'mercados' && MERCADOS
+          ? `<p class="text-xs text-slate-500 mb-2 inline-flex items-center gap-1.5"><span class="live-dot w-1.5 h-1.5 rounded-full bg-emerald-600"></span>Cotizaciones internacionales en tiempo real dentro de la sección</p>
+             <div class="grid grid-cols-2 gap-2 mb-3">${LOCALES.slice(0, 4).map((m) => `
+              <div class="rounded-lg border border-custom p-2"><p class="text-[11px] text-slate-500 leading-tight">${esc(m.nombre)}</p>
+              <p class="font-mono text-sm font-bold">${esc(m.valor)}</p><p class="text-[11px] font-semibold ${colorVar(m.var)}">${cambioVar(m)}</p></div>`).join('')}</div>`
+          : '';
+        const titulares = notas.slice(0, 3).map((n) => `
+            <li><a href="#${sec.id}" class="block rounded-lg px-2 py-1.5 -mx-2 hover:bg-slate-50 dark:hover:bg-white/5">
+              <span class="block font-serif font-semibold leading-snug text-slate-900 dark:text-slate-100">${esc(n.titulo)}</span>
+              <span class="text-xs text-slate-500">${fmtSeg(n.seg)} de lectura</span></a></li>`).join('');
+        return `<div class="hidden lg:group-hover:block lg:group-focus-within:block absolute ${alineacion} top-full z-50 w-[22rem] pt-1">
+            <div class="rounded-2xl border border-custom bg-card shadow-xl p-4">
+              <p class="kicker ${sec.info.text} mb-2">${sec.label}</p>
+              ${claves}
+              ${notas.length ? `<ul class="space-y-1">${titulares}</ul>` : '<p class="text-sm text-slate-500">Hoy no hay noticias en esta sección.</p>'}
+              <a href="#${sec.id}" class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold ${sec.info.text} hover:underline">Ver toda la sección ${flecha}</a>
+            </div>
+          </div>`;
+      }
+
+      $('#secciones-lista').innerHTML = SECCIONES.map((sec, i) => `
+        <li class="group relative shrink-0">
+          <a href="#${sec.id}" data-seccion="${sec.id}"
+             class="flex items-center gap-2 h-11 px-3 text-sm font-semibold text-slate-700 dark:text-slate-200 border-b-2 border-transparent transition-colors ${sec.hover}">
+            <span class="w-1.5 h-1.5 rounded-full ${sec.info.dot}"></span>${sec.label}
+            ${sec.id !== 'portada' ? `<span class="text-[11px] font-semibold text-slate-500 rounded-full border border-custom px-1.5 leading-4">${notasDe(sec.id).length}</span>` : ''}
+          </a>
+          ${adelanto(sec, i >= SECCIONES.length - 2 ? 'right-0' : 'left-0')}
+        </li>`).join('');
+
+      function vistaSeccion(sec) {
+        const notas = notasDe(sec.id);
+        const seg = notas.reduce((a, n) => a + n.seg, 0);
+        const encabezado = `
+          <div class="border-t-2 border-slate-900 dark:border-slate-100 pt-3 mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p class="kicker ${sec.info.text}">Sección</p>
+              <h2 class="font-serif font-semibold text-4xl tracking-tight">${sec.label}</h2>
+              <p class="text-sm text-slate-500 mt-1">${notas.length} ${notas.length === 1 ? 'noticia' : 'noticias'} · ${fmtSeg(seg)} de lectura</p>
+            </div>
+            <a href="#portada" class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-pulse">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Volver a la portada</a>
+          </div>`;
+        const mercadosDatos = sec.id === 'mercados' ? `
+          ${bloqueTV()}
+          ${bloqueLocales}
+          ${MERCADOS && MERCADOS.fuentesDatos ? `<div class="mt-2 mb-8">${fuentes(MERCADOS.fuentesDatos).replace('Fuentes:', 'Datos locales:')}</div>` : '<div class="mb-8"></div>'}` : '';
+        const lista = notas.length
+          ? `<div class="space-y-5">${notas.map(tarjetaCompleta).join('')}</div>`
+          : '<p class="rounded-2xl border border-custom bg-card p-6 text-sm text-slate-500">Hoy no hay noticias en esta sección.</p>';
+        return encabezado + mercadosDatos + lista;
+      }
+
+      // Ruteo por hash: #argentina, #mundo, #economia, #tech, #mercados (cualquier otro → portada)
+      function mostrarVista(desplazar) {
+        const pedido = decodeURIComponent(location.hash.slice(1));
+        const sec = SECCIONES.find((x) => x.id === pedido) || SECCIONES[0];
+        const esPortada = sec.id === 'portada';
+        $('#vista-portada').hidden = !esPortada;
+        $('#vista-seccion').hidden = esPortada;
+        if (!esPortada) $('#vista-seccion').innerHTML = vistaSeccion(sec);
+        montarTVVisibles();
+        activarVisuales();
+        document.querySelectorAll('[data-seccion]').forEach((a) => {
+          const s2 = SECCIONES.find((x) => x.id === a.dataset.seccion);
+          const activa = s2.id === sec.id;
+          a.setAttribute('aria-current', activa ? 'page' : 'false');
+          s2.activa.split(' ').forEach((c) => a.classList.toggle(c, activa));
+          a.classList.toggle('border-transparent', !activa);
+        });
+        document.title = (esPortada ? '' : sec.label + ' · ') + '5M News — El mundo, informado en menos de 5 minutos';
+        if (desplazar) {
+          const destino = esPortada ? 0 : $('#vista-seccion').getBoundingClientRect().top + window.scrollY - $('header').offsetHeight - 16;
+          window.scrollTo({ top: Math.max(0, destino), behavior: 'smooth' });
+        }
+        // Cierra el adelanto abierto por foco después de un clic
+        if (document.activeElement && document.activeElement.closest('#secciones')) document.activeElement.blur();
+      }
+      window.addEventListener('hashchange', () => {
+        const h = decodeURIComponent(location.hash.slice(1));
+        if (!h || SECCIONES.some((x) => x.id === h)) mostrarVista(true); // otros anclajes (#contenido) no cambian la vista
+      });
+      mostrarVista(Boolean(location.hash && location.hash !== '#portada'));
+
+      // ---------- EN 30 SEGUNDOS ----------
+      $('#tendencias').innerHTML = TENDENCIAS.map((t, i) => `
+        <li class="flex gap-3">
+          <span class="font-mono font-bold text-slate-400">${String(i + 1).padStart(2, '0')}</span>
+          <p class="leading-snug"><b class="${catInfo(t.cat).text}">${esc(t.label)}</b> ${esc(t.txt)}</p>
+        </li>`).join('');
+
+      // ---------- BÚSQUEDA ----------
+      const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      function buscar(q) {
+        const box = $('#resultados-busqueda');
+        const term = norm(q.trim());
+        if (!term) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+        const res = todas.filter((n) => norm([n.titulo, n.bajada, n.que, ...n.fuentes.map((f) => f.nombre)].join(' ')).includes(term));
+        box.classList.remove('hidden');
+        box.innerHTML = `
+          <div class="rounded-2xl border border-custom bg-card p-5">
+            <p class="kicker text-slate-500">${res.length} resultado${res.length === 1 ? '' : 's'} para “${esc(q)}”</p>
+            <ul class="mt-3 divide-custom">${res.map((n) => `<li class="py-2 flex items-center gap-3">${catLabel(n.cat)}<span class="font-serif font-semibold">${esc(n.titulo)}</span></li>`).join('')}</ul>
+          </div>`;
+      }
+      $('#buscador').addEventListener('submit', (e) => e.preventDefault());
+      $('#q').addEventListener('input', (e) => buscar(e.target.value));
+      $('#q-mobile').addEventListener('input', (e) => buscar(e.target.value));
+
+      // ---------- ESCUCHAR BRIEFING ----------
+      const segmentos = [
+        'Bienvenido a 5M News. Este es tu briefing de hoy.',
+        ...NOTICIAS.map((n, i) => `Noticia ${i + 1}. ${n.titulo}. ${n.que} Por qué importa: ${n.porque}`),
+        ...(NOT_MERCADOS.length ? ['Ahora, los mercados.', ...NOT_MERCADOS.map((n) => `${n.titulo}. ${n.que}`)] : []),
+        'Eso es todo. Ya estás informado. Que tengas un gran día.'
+      ];
+      let idx = 0, estado = 'idle', turno = 0, reiniciarAlReanudar = false;
+      const synth = window.speechSynthesis;
+      const VELOCIDADES = [1, 1.25, 1.5];
+      let velocidad = 1;
+      try { const v = parseFloat(localStorage.getItem('5m-velocidad')); if (VELOCIDADES.includes(v)) velocidad = v; } catch (e) {}
+      function pintarVelocidad() {
+        document.querySelectorAll('#pl-velocidad [data-vel]').forEach((b) => {
+          const activa = parseFloat(b.dataset.vel) === velocidad;
+          b.setAttribute('aria-checked', String(activa));
+          b.tabIndex = activa ? 0 : -1;
+          b.classList.toggle('bg-pulse', activa); b.classList.toggle('text-white', activa);
+          b.classList.toggle('text-slate-600', !activa); b.classList.toggle('dark:text-slate-300', !activa);
+          b.classList.toggle('hover:bg-black/5', !activa); b.classList.toggle('dark:hover:bg-white/10', !activa);
+        });
+      }
+      function cambiarVelocidad(v) {
+        if (v === velocidad) return;
+        velocidad = v;
+        try { localStorage.setItem('5m-velocidad', String(v)); } catch (e) {}
+        pintarVelocidad();
+        // La voz sintetizada fija la velocidad al empezar cada fragmento: se reinicia el fragmento actual
+        if (estado === 'playing') hablar(idx);
+        else if (estado === 'paused') reiniciarAlReanudar = true;
+      }
+      $('#pl-velocidad').addEventListener('click', (e) => { const b = e.target.closest('[data-vel]'); if (b) cambiarVelocidad(parseFloat(b.dataset.vel)); });
+      $('#pl-velocidad').addEventListener('keydown', (e) => {
+        if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+        const i = VELOCIDADES.indexOf(velocidad) + (e.key === 'ArrowRight' ? 1 : -1);
+        if (i >= 0 && i < VELOCIDADES.length) { cambiarVelocidad(VELOCIDADES[i]); $(`#pl-velocidad [data-vel="${VELOCIDADES[i]}"]`).focus(); }
+        e.preventDefault();
+      });
+      pintarVelocidad();
+
+      function hablar(i) {
+        const miTurno = ++turno; // los avisos de fin de lecturas canceladas se ignoran
+        synth.cancel();
+        if (i >= segmentos.length) return cerrar();
+        idx = i;
+        reiniciarAlReanudar = false;
+        const u = new SpeechSynthesisUtterance(segmentos[i]);
+        const voces = synth.getVoices();
+        u.voice = voces.find((v) => v.lang === 'es-AR') || voces.find((v) => v.lang.startsWith('es')) || null;
+        u.lang = (u.voice && u.voice.lang) || 'es-AR';
+        u.rate = velocidad;
+        u.onend = () => { if (miTurno === turno && estado === 'playing') hablar(i + 1); };
+        synth.speak(u);
+        estado = 'playing';
+        actualizarPlayer();
+      }
+      function actualizarPlayer() {
+        $('#player').classList.remove('hidden');
+        $('#pl-pos').textContent = `Briefing de hoy · ${idx + 1}/${segmentos.length}`;
+        $('#pl-texto').textContent = segmentos[idx];
+        $('#pl-bar').style.width = ((idx + 1) / segmentos.length * 100) + '%';
+        $('#pl-toggle').innerHTML = estado === 'playing' ? ICONO_PAUSA : ICONO_PLAY;
+        $('#pl-toggle').setAttribute('aria-label', estado === 'playing' ? 'Pausar' : 'Reproducir');
+        $('#btn-audio-label').textContent = estado === 'playing' ? 'Escuchando…' : 'Escuchar Briefing';
+      }
+      function toggle() {
+        if (!synth) return alert('Tu navegador no soporta síntesis de voz.');
+        if (estado === 'playing') { synth.pause(); estado = 'paused'; actualizarPlayer(); }
+        else if (estado === 'paused') {
+          if (reiniciarAlReanudar) { estado = 'playing'; hablar(idx); } // se cambió la velocidad estando en pausa
+          else { synth.resume(); estado = 'playing'; actualizarPlayer(); }
+        }
+        else hablar(idx);
+      }
+      function cerrar() {
+        turno++; estado = 'idle'; idx = 0;
+        if (synth) synth.cancel();
+        $('#player').classList.add('hidden');
+        $('#btn-audio-label').textContent = 'Escuchar Briefing';
+      }
+      $('#btn-audio').addEventListener('click', toggle);
+      $('#pl-toggle').addEventListener('click', toggle);
+      $('#pl-next').addEventListener('click', () => { estado = 'playing'; hablar(idx + 1); });
+      $('#pl-close').addEventListener('click', cerrar);
+    }
+
+    // El briefing se rehace cada hora: si hay una edición nueva mientras la página está abierta, se avisa
+    let VERSION_ACTUAL = '';
+    setInterval(() => {
+      if (document.hidden || document.getElementById('aviso-nuevas')) return;
+      fetch('briefing.json', { cache: 'no-cache' }).then((r) => r.ok ? r.json() : null).then((d) => {
+        if (!d || !d.actualizado || !VERSION_ACTUAL || d.actualizado === VERSION_ACTUAL) return;
+        document.body.insertAdjacentHTML('beforeend', `<button id="aviso-nuevas" type="button" onclick="location.reload()"
+          class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-5 py-2.5 text-sm font-semibold shadow-lg hover:opacity-90">Hay noticias nuevas · Actualizar</button>`);
+      }).catch(() => {});
+    }, 10 * 60 * 1000);
+
+    fetch('briefing.json', { cache: 'no-cache' })
+      .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(render)
+      .catch(() => {
+        $('#hero').innerHTML = '<p class="rounded-2xl border border-custom bg-card p-6 text-sm text-slate-500">No pudimos cargar el briefing de hoy. ' +
+          (location.protocol === 'file:' ? 'Abrí la página desde un servidor (por ejemplo, <code>npx serve</code>): el navegador bloquea la carga de <code>briefing.json</code> desde un archivo local.' : 'Probá recargar la página.') + '</p>';
+      });
+  </script>
+
+  <!-- Instalar la app: diálogo con los pasos según el dispositivo + aviso discreto en el celular -->
+  <dialog id="dlg-instalar" class="w-[min(92vw,26rem)] rounded-2xl p-0 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl backdrop:bg-black/50" aria-labelledby="dlg-instalar-titulo">
+    <div class="p-6">
+      <div class="flex items-center gap-3 mb-4">
+        <img src="/icons/icon-192.png" alt="" class="w-12 h-12 rounded-xl">
+        <div>
+          <h2 id="dlg-instalar-titulo" class="font-serif font-semibold text-xl leading-tight">Tené 5M News a un toque</h2>
+          <p class="text-sm text-slate-500">Se abre como una app, sin buscar el link.</p>
+        </div>
+      </div>
+      <ol id="dlg-instalar-pasos" class="space-y-3 text-sm"></ol>
+      <div class="mt-6 flex justify-end gap-2">
+        <button type="button" data-cerrar class="h-10 px-4 rounded-full text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10">Listo</button>
+      </div>
+    </div>
+  </dialog>
+  <div id="aviso-instalar" class="hidden fixed inset-x-3 bottom-3 z-40 md:hidden rounded-2xl border border-custom bg-white dark:bg-slate-900 shadow-xl p-3 flex items-center gap-3">
+    <img src="/icons/icon-192.png" alt="" class="w-11 h-11 rounded-xl shrink-0">
+    <p class="flex-1 text-sm leading-snug"><b>Agregá 5M News a tu inicio</b><br><span class="text-slate-500">Las noticias del día en un toque.</span></p>
+    <button type="button" id="aviso-instalar-si" class="h-9 px-4 rounded-full bg-pulse text-white text-sm font-semibold">Agregar</button>
+    <button type="button" id="aviso-instalar-no" class="w-8 h-8 grid place-items-center rounded-full text-slate-500 hover:bg-black/5" aria-label="Cerrar aviso">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <script>
+    (() => {
+      if (location.protocol === 'http:' && location.hostname !== 'localhost') { location.replace('https://' + location.host + location.pathname + location.search + location.hash); return; }
+      // Service worker: hace instalable la web y la abre sin conexión con la última edición
+      if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+      const instalada = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      const btn = document.getElementById('btn-instalar');
+      const dlg = document.getElementById('dlg-instalar');
+      const aviso = document.getElementById('aviso-instalar');
+      if (instalada || !btn) return; // ya se abrió desde el acceso directo
+
+      const ua = navigator.userAgent;
+      const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const android = /Android/.test(ua);
+      const movil = ios || android || /Mobi/.test(ua);
+      const safariMac = !movil && /Safari/.test(ua) && !/Chrome|Chromium|Edg|Firefox/.test(ua);
+      const firefox = /Firefox|FxiOS/.test(ua);
+      // Android: sólo Chrome/Edge/Samsung instalan la app de verdad. Los navegadores internos de WhatsApp, Instagram,
+      // Facebook, TikTok, etc. (y otros navegadores) sólo crean un acceso directo que abre en el navegador.
+      const internoApp = android && /; wv\)|FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|TikTok|musical_ly|Snapchat|GSA\//.test(ua);
+      const chromeAndroid = android && !internoApp && /Chrome\/\d/.test(ua) && !/SamsungBrowser|OPR|Opera|Firefox|YaBrowser|MiuiBrowser|HuaweiBrowser|DuckDuckGo|Brave/.test(ua);
+      const samsung = android && /SamsungBrowser/.test(ua);
+      const urlChrome = 'intent://' + location.host + '/?app=1#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent('https://' + location.host + '/') + ';end';
+      let promptNativo = null; // Chrome / Edge / Samsung: instalación con un toque
+
+      const ICO_COMPARTIR = '<svg class="inline w-4 h-4 -mt-0.5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Compartir"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 11v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"/></svg>';
+      const ICO_MENU = '<svg class="inline w-4 h-4 -mt-0.5" viewBox="0 0 24 24" fill="currentColor" aria-label="menú"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>';
+      const paso = (n, html) => `<li class="flex gap-3"><span class="w-6 h-6 shrink-0 rounded-full bg-pulse text-white grid place-items-center text-xs font-bold">${n}</span><span class="pt-0.5">${html}</span></li>`;
+      function pasos() {
+        if (ios) return [
+          `Tocá el botón Compartir ${ICO_COMPARTIR} ${/CriOS|FxiOS|EdgiOS/.test(ua) ? 'arriba a la derecha, al lado de la barra de direcciones' : 'en la barra de abajo de Safari'}.`,
+          'Deslizá hacia abajo y elegí <b>"Agregar a inicio"</b>.',
+          'Tocá <b>"Agregar"</b>. El ícono de 5M News aparece en tu pantalla de inicio.',
+        ];
+        const borrarViejo = 'Si antes creaste un acceso directo que abre en el navegador, borralo: mantenelo apretado y elegí <b>"Quitar"</b>.';
+        if (android && !chromeAndroid && !samsung) return [
+          `${internoApp ? 'Estás viendo 5M News dentro de otra app (WhatsApp, Instagram…): desde ahí sólo se crea un acceso directo que abre en el navegador.' : 'Este navegador no instala apps: sólo crea un acceso directo que abre en el navegador.'}`,
+          `Abrí 5M News en Chrome: <a href="${urlChrome}" class="inline-flex items-center gap-1 mt-1 h-9 px-4 rounded-full bg-pulse text-white font-semibold no-underline">Abrir en Chrome</a><br><span class="text-slate-500">(o copiá 5mnews.netlify.app y pegalo en Chrome).</span>`,
+          'Ya en Chrome, tocá el botón <b>"App"</b> de arriba y después <b>"Instalar"</b>.',
+          borrarViejo,
+        ];
+        if (samsung) return [
+          'Tocá el menú (las tres rayas) abajo a la derecha.',
+          'Elegí <b>"Agregar página a"</b> &rarr; <b>"Pantalla de inicio"</b> y confirmá con <b>"Instalar"</b> si aparece.',
+          'Si queda abriendo en el navegador, abrí 5mnews.netlify.app en <b>Chrome</b> e instalala desde ahí.',
+          borrarViejo,
+        ];
+        if (android) return [
+          `Tocá el menú ${ICO_MENU} arriba a la derecha de Chrome.`,
+          'Elegí <b>"Instalar app"</b>. Si sólo ves <b>"Agregar a la pantalla principal"</b>, tocalo y en la ventana elegí <b>"Instalar"</b> (no "Crear acceso directo").',
+          'Confirmá. 5M News queda entre tus apps y se abre sola, sin la barra del navegador.',
+          borrarViejo,
+        ];
+        if (safariMac) return [
+          'En la barra de menú de Safari, abrí <b>Archivo</b>.',
+          'Elegí <b>"Agregar al Dock"</b> y confirmá con <b>"Agregar"</b>.',
+          '5M News queda en el Dock y en Aplicaciones.',
+        ];
+        if (firefox) return [
+          'Firefox en computadora no instala apps web: guardala en favoritos con <b>Ctrl + D</b> (o <b>Cmd + D</b> en Mac).',
+          'Para un ícono en el escritorio, arrastrá el candado de la barra de direcciones hasta el escritorio.',
+          'Si usás Chrome o Edge, abrí 5mnews.netlify.app ahí y tocá <b>"Instalar app"</b>: queda como app.',
+        ];
+        return [
+          'En la barra de direcciones, hacé clic en el ícono de instalar (una pantalla con una flecha), a la derecha.',
+          `Si no lo ves: menú ${ICO_MENU} &rarr; <b>"Transmitir, guardar y compartir"</b> &rarr; <b>"Instalar página como app"</b> (Chrome) o <b>Aplicaciones &rarr; "Instalar este sitio como una aplicación"</b> (Edge).`,
+          '5M News queda en el escritorio, en el menú Inicio y se puede anclar a la barra de tareas.',
+        ];
+      }
+      function abrirAyuda() {
+        document.getElementById('dlg-instalar-pasos').innerHTML = pasos().map((t, i) => paso(i + 1, t)).join('');
+        dlg.showModal();
+      }
+      const esperarPrompt = (ms) => new Promise((ok) => {
+        if (promptNativo) return ok();
+        const fin = setTimeout(ok, ms);
+        window.addEventListener('beforeinstallprompt', () => { clearTimeout(fin); setTimeout(ok, 0); }, { once: true });
+      });
+      async function instalar() {
+        ocultarAviso(true);
+        if (!promptNativo && (chromeAndroid || samsung || (!movil && !safariMac && !firefox))) {
+          btn.setAttribute('aria-busy', 'true');
+          await esperarPrompt(3000);
+          btn.removeAttribute('aria-busy');
+        }
+        if (promptNativo) {
+          promptNativo.prompt();
+          const { outcome } = await promptNativo.userChoice.catch(() => ({}));
+          promptNativo = null;
+          if (outcome === 'accepted') btn.classList.add('hidden');
+          return;
+        }
+        abrirAyuda();
+      }
+      function ocultarAviso(recordar) {
+        aviso.classList.add('hidden');
+        if (recordar) try { localStorage.setItem('5m-aviso-instalar', String(Date.now())); } catch {}
+      }
+
+      btn.classList.remove('hidden');
+      btn.addEventListener('click', instalar);
+      dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-cerrar]')) dlg.close(); });
+      document.getElementById('aviso-instalar-si').addEventListener('click', instalar);
+      document.getElementById('aviso-instalar-no').addEventListener('click', () => ocultarAviso(true));
+      window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); promptNativo = e; });
+      window.addEventListener('appinstalled', () => { btn.classList.add('hidden'); ocultarAviso(true); });
+
+      // Aviso en el celular: una vez, a los 12 segundos de lectura; si lo cierran, vuelve recién a los 14 días
+      let ultimo = 0;
+      try { ultimo = Number(localStorage.getItem('5m-aviso-instalar') || 0); } catch {}
+      if (movil && Date.now() - ultimo > 14 * 86400000) {
+        setTimeout(() => { if (!document.getElementById('aviso-nuevas') && !dlg.open) aviso.classList.remove('hidden'); }, 12000);
+      }
+    })();
+  </script>
+  <div id="aviso-notif" class="hidden fixed inset-x-3 bottom-3 z-40 md:inset-x-auto md:right-5 md:w-96 rounded-2xl border border-custom bg-white dark:bg-slate-900 shadow-xl p-3 flex items-center gap-3">
+    <span class="w-11 h-11 shrink-0 rounded-xl bg-pulse text-white grid place-items-center" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+    <p class="flex-1 text-sm leading-snug"><b>Activá las notificaciones</b><br><span class="text-slate-500">El briefing de lunes a viernes a las 7:00 AM.</span></p>
+    <button type="button" id="aviso-notif-si" class="h-9 px-4 rounded-full bg-pulse text-white text-sm font-semibold">Activar</button>
+    <button type="button" id="aviso-notif-no" class="w-8 h-8 grid place-items-center rounded-full text-slate-500 hover:bg-black/5" aria-label="Cerrar aviso">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <script>
+    // ---------- Notificaciones push (briefing 7:00 y Resumen de los Jueves) ----------
+    (() => {
+      const caja = document.getElementById('notif-estado');
+      const aviso = document.getElementById('aviso-notif');
+      if (!caja) return;
+      const instalada = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+      const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const soporta = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+      const BTN = 'inline-flex items-center justify-center h-10 px-5 rounded-full text-sm font-semibold';
+      const bytes = (b64) => Uint8Array.from(atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+      const reg = () => navigator.serviceWorker.ready;
+
+      async function suscripcionActual() {
+        if (!soporta || Notification.permission !== 'granted') return null;
+        return (await reg()).pushManager.getSubscription();
+      }
+      const franja = document.getElementById('franja-notif');
+      async function pintar() {
+        franja?.classList.add('hidden');
+        if (!soporta) {
+          caja.innerHTML = ios && !instalada
+            ? '<p class="rounded-xl bg-soft p-3">En iPhone, las notificaciones funcionan con la app instalada: tocá <b>App</b> arriba, agregala a tu inicio y abrila desde el ícono.</p>'
+            : '<p class="text-slate-500">Este navegador no admite notificaciones. Probá con Chrome, Edge, Firefox o Safari.</p>';
+          return;
+        }
+        if (Notification.permission === 'denied') {
+          caja.innerHTML = '<p class="rounded-xl bg-soft p-3">Las notificaciones están bloqueadas para este sitio. Para activarlas, entrá a la configuración del navegador (o de la app, en el celular) y permití las notificaciones de 5M News.</p>';
+          return;
+        }
+        const sub = await suscripcionActual().catch(() => null);
+        caja.innerHTML = sub
+          ? `<p class="flex items-center gap-2 font-semibold text-emerald-700 dark:text-emerald-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Activadas en este dispositivo</p>
+             <p class="mt-1 text-xs text-slate-500">Te llegan de lunes a viernes a las 7:00 AM y los jueves, el Resumen de los Jueves.</p>
+             <button type="button" data-notif="off" class="mt-2 text-xs text-slate-500 underline hover:text-pulse">Desactivar</button>`
+          : `<button type="button" data-notif="on" class="${BTN} w-full bg-pulse text-white hover:opacity-90">Activar notificaciones</button>`;
+        if (!sub) franja?.classList.remove('hidden'); // en el celular, a la vista debajo de la noticia principal
+      }
+      async function activar() {
+        caja.innerHTML = '<p class="text-slate-500">Activando…</p>';
+        try {
+          const permiso = await Notification.requestPermission();
+          if (permiso !== 'granted') return pintar();
+          const { publicKey } = await (await fetch('/api/push/clave')).json();
+          const r = await reg();
+          const sub = (await r.pushManager.getSubscription()) || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(publicKey) }));
+          const res = await fetch('/api/push/suscribir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subscription: sub }) });
+          if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.status);
+        } catch (e) {
+          caja.innerHTML = '<p class="text-red-600">No pudimos activarlas. Probá de nuevo en un rato.</p>';
+          return;
+        }
+        ocultarAviso();
+        pintar();
+      }
+      async function desactivar() {
+        const sub = await suscripcionActual().catch(() => null);
+        if (sub) {
+          await fetch('/api/push/desuscribir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) }).catch(() => {});
+          await sub.unsubscribe().catch(() => {});
+        }
+        pintar();
+      }
+      function ocultarAviso() {
+        aviso.classList.add('hidden');
+        try { localStorage.setItem('5m-aviso-notif', String(Date.now())); } catch {}
+      }
+      caja.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-notif]');
+        if (b) b.dataset.notif === 'on' ? activar() : desactivar();
+      });
+      document.getElementById('aviso-notif-si').addEventListener('click', activar);
+      document.getElementById('franja-notif-si')?.addEventListener('click', () => { franja.innerHTML = '<p class="text-sm text-slate-500 px-1">Activando…</p>'; activar().then(() => franja.classList.add('hidden')); });
+      document.getElementById('aviso-notif-no').addEventListener('click', ocultarAviso);
+      pintar();
+
+      // Invitar una vez a activarlas: con la app instalada a los 6 s; en el navegador (Android, computadora) a los 25 s,
+      // sin taparse con el aviso de instalar la app. En iPhone sólo se puede con la app instalada (regla de Apple).
+      let ultimo = 0;
+      try { ultimo = Number(localStorage.getItem('5m-aviso-notif') || 0); } catch {}
+      if (soporta && Notification.permission === 'default' && Date.now() - ultimo > 14 * 86400000) {
+        const mostrar = () => {
+          const instalarVisible = !document.getElementById('aviso-instalar')?.classList.contains('hidden');
+          if (instalarVisible || document.getElementById('aviso-nuevas') || document.getElementById('dlg-instalar')?.open) return setTimeout(mostrar, 15000);
+          suscripcionActual().then((sub) => { if (!sub) aviso.classList.remove('hidden'); }).catch(() => {});
+        };
+        setTimeout(mostrar, instalada ? 6000 : 25000);
+      }
+    })();
+  </script>
+</body>
+</html>

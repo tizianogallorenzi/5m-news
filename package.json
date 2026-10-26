@@ -1,0 +1,23 @@
+{
+  "name": "5m-news-site",
+  "private": true,
+  "type": "module",
+  "description": "5M News — sitio estático + funciones de newsletter (Netlify o Render)",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.2.0",
+    "@netlify/blobs": "^10.0.0",
+    "web-push": "^3.6.7",
+    "esbuild": "^0.28.0"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^4.0.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "esbuild render/server.mts --bundle --platform=node --format=esm --target=node20 --packages=external --alias:@netlify/blobs=./render/blobs-supabase.mts --outfile=dist/server.mjs",
+    "start": "node dist/server.mjs"
+  }
+}

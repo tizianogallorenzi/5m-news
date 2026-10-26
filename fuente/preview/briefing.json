@@ -1,0 +1,708 @@
+{
+  "edicion": "2026-10-23",
+  "noticias": [
+    {
+      "cat": "mundo",
+      "hora": "07:40",
+      "seg": 35,
+      "hero": true,
+      "titulo": "El Brent supera los US$110 por temor a nuevos ataques contra Irán",
+      "bajada": "Los planes de EE.UU. e Israel de volver a atacar y los ataques a petroleros cerca de Ormuz llevaron el crudo a máximos desde mayo.",
+      "que": "Según The New York Times, EE.UU. e Israel prepararon planes para volver a atacar Irán después de las elecciones estadounidenses del 3 de noviembre. La televisión estatal iraní informó que siete petroleros fueron alcanzados cerca de Ormuz, y Saudi Aramco evacuó su sede de Dhahran. El Brent tocó US$114,72 el jueves y hoy opera cerca de US$116.",
+      "quien": "Industrias y consumidores que dependen del combustible, aerolíneas y países importadores. En cambio, los productores de Vaca Muerta ganan con un crudo más caro.",
+      "porque": "El petróleo caro presiona la inflación global y complica a los bancos centrales. Hoy es el principal riesgo para los mercados.",
+      "fuentes": [
+        {
+          "nombre": "CNBC",
+          "url": "https://www.cnbc.com/amp/2026/10/22/oil-prices-today-wti-brent-saudi-arabia.html"
+        },
+        {
+          "nombre": "CBS News",
+          "url": "https://www.cbsnews.com/live-updates/iran-war-us-strait-of-hormuz-oil-gas-price-strikes/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Brent hoy",
+          "valor": "US$116,02",
+          "delta": "+2,52%",
+          "tendencia": "sube",
+          "detalle": "Cotización de la mañana del viernes, frente al cierre anterior (Financial Modeling Prep)."
+        },
+        {
+          "label": "Máximo del jueves",
+          "valor": "US$114,72",
+          "tendencia": "sube",
+          "detalle": "El nivel más alto desde el 4 de mayo, según CNBC."
+        },
+        {
+          "label": "WTI (jueves)",
+          "valor": "US$99,86",
+          "tendencia": "sube",
+          "detalle": "El crudo de referencia de EE.UU., cerca de los US$100 durante la rueda del jueves (CNBC)."
+        }
+      ],
+      "imagenBusqueda": "oil tanker ship",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "mundo",
+      "hora": "07:20",
+      "seg": 30,
+      "clave": true,
+      "titulo": "Brasil vota el domingo con Lula y Flávio Bolsonaro empatados",
+      "bajada": "La última encuesta de Datafolha muestra un 50 a 50 en votos válidos a dos días del balotaje.",
+      "que": "Datafolha (2.154 entrevistas, del 20 al 22 de octubre) ubica a Lula y a Flávio Bolsonaro con el 50% de los votos válidos cada uno. El 15 de octubre, Flávio lideraba 51% a 49%. En la primera vuelta, Flávio obtuvo 47,03% y Lula 45,16%.",
+      "quien": "Los votantes brasileños, los inversores con activos en Brasil y la Argentina, que tiene en Brasil a su principal socio comercial.",
+      "porque": "El resultado define el rumbo del principal socio de la Argentina en el Mercosur y puede mover al real y a los mercados de la región desde el lunes.",
+      "fuentes": [
+        {
+          "nombre": "Reuters",
+          "url": "https://www.internazionale.it/ultime-notizie-reuters/2026/10/23/flavio-bolsonaro-and-lula-about-even-ahead-of-brazil-runoff-datafolha-poll-shows"
+        },
+        {
+          "nombre": "Reuters (15/10)",
+          "url": "https://www.usnews.com/news/world/articles/2026-10-15/flavio-bolsonaros-lead-over-lula-narrows-ahead-of-brazil-runoff-datafolha-poll-shows"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Primera vuelta",
+          "valor": "47,03% vs. 45,16%",
+          "tendencia": "neutral",
+          "detalle": "Flávio Bolsonaro 47,03% y Lula 45,16% de los votos válidos, según el TSE."
+        },
+        {
+          "label": "Balotaje",
+          "valor": "Domingo 25/10",
+          "tendencia": "neutral",
+          "detalle": "Ninguno superó el 50% en primera vuelta."
+        }
+      ],
+      "grafico": {
+        "tipo": "linea",
+        "titulo": "Intención de voto en el balotaje (% de votos válidos)",
+        "unidad": "%",
+        "etiquetas": [
+          "8/10",
+          "15/10",
+          "22/10"
+        ],
+        "series": [
+          {
+            "nombre": "Flávio Bolsonaro",
+            "valores": [
+              52,
+              51,
+              50
+            ]
+          },
+          {
+            "nombre": "Lula",
+            "valores": [
+              48,
+              49,
+              50
+            ]
+          }
+        ],
+        "fuente": "Datafolha, vía The Rio Times y Reuters"
+      },
+      "imagenBusqueda": "Palácio do Planalto Brasília",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "argentina",
+      "hora": "07:00",
+      "seg": 35,
+      "clave": true,
+      "titulo": "El riesgo país supera los 700 puntos y caen las acciones argentinas",
+      "bajada": "Los bonos y los ADRs tocaron mínimos de un año por el golpe a las tecnológicas en Wall Street y las dudas sobre los próximos vencimientos de deuda.",
+      "que": "El jueves, el riesgo país cerró en 704 puntos (+4,5%), el nivel más alto desde octubre de 2025, y acumula una suba del 16% en el mes. Los ADRs cayeron hasta 6% (Ternium −6,1%, YPF −2,5%) y el MSCI Merval retrocedió 1,6%. El BCRA compró US$61 millones.",
+      "quien": "Inversores en bonos y acciones locales, empresas y provincias que buscan financiarse en dólares, y el Tesoro, que necesita refinanciar vencimientos.",
+      "porque": "Un riesgo país más alto encarece cualquier deuda nueva. El mercado espera que el Gobierno explique cómo va a conseguir los dólares para pagar los próximos vencimientos.",
+      "fuentes": [
+        {
+          "nombre": "Infobae",
+          "url": "https://infobae.com/economia/2026/10/22/jornada-financiera-las-acciones-argentinas-cayeron-hasta-6-en-wall-street-y-el-riesgo-pais-supero-los-700-puntos"
+        },
+        {
+          "nombre": "Perfil",
+          "url": "https://www.perfil.com/noticias/economia/el-riesgo-pais-volvio-a-saltar-y-supero-los-700-puntos-en-una-jornada-caliente-para-el-dolar-a40.phtml"
+        },
+        {
+          "nombre": "El Cronista",
+          "url": "https://www.cronista.com/finanzas-mercados/riesgo-pais-se-dispara-a-675-puntos-y-las-acciones-caen-hasta-3-en-el-debut-del-msci-merval/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Riesgo país",
+          "valor": "704 pb",
+          "delta": "+4,5%",
+          "tendencia": "sube",
+          "detalle": "Cierre del jueves 22/10, según JP Morgan: el nivel más alto desde octubre de 2025."
+        },
+        {
+          "label": "Suba en octubre",
+          "valor": "+16%",
+          "tendencia": "sube",
+          "detalle": "Variación acumulada del riesgo país en el mes (Perfil)."
+        },
+        {
+          "label": "Compras del BCRA",
+          "valor": "US$61 M",
+          "tendencia": "neutral",
+          "detalle": "Dólares que compró el Banco Central en la rueda del jueves."
+        }
+      ],
+      "grafico": {
+        "tipo": "barras",
+        "titulo": "Variación del jueves 22/10",
+        "unidad": "%",
+        "signo": true,
+        "puntos": [
+          {
+            "label": "Riesgo país",
+            "valor": 4.5
+          },
+          {
+            "label": "MSCI Merval",
+            "valor": -1.6
+          },
+          {
+            "label": "YPF (NYSE)",
+            "valor": -2.5
+          },
+          {
+            "label": "Ternium (NYSE)",
+            "valor": -6.1
+          }
+        ],
+        "fuente": "Infobae y Perfil"
+      },
+      "imagenBusqueda": "Bolsa de Comercio de Buenos Aires",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "tech",
+      "hora": "06:50",
+      "seg": 35,
+      "clave": true,
+      "titulo": "Fallas críticas en PHP obligan a desconectar sitios en todo el mundo",
+      "bajada": "Gobiernos, hospitales y empresas sacaron páginas de línea mientras aplican los parches publicados el 21 de octubre.",
+      "que": "Las vulnerabilidades CVE-2026-109618 y CVE-2026-109619, con una gravedad de 9,2 sobre 10, permiten ejecutar código a distancia sin contraseña. Palo Alto Networks detectó más de 22,6 millones de servidores potencialmente expuestos, y CERT-EU recomendó desconectar los sitios que no puedan actualizarse. Según Axios, las fallas se encontraron con ayuda de tecnología de OpenAI.",
+      "quien": "Cualquier organización con sitios en PHP (tiendas online, medios, universidades, organismos públicos) y sus usuarios. En Uruguay, Agesic mantiene desconectados sitios del Estado.",
+      "porque": "Ya circulan pruebas de concepto del ataque. Las versiones PHP 8.1 y anteriores pueden no recibir parche: si tu empresa las usa, conviene revisarlo hoy.",
+      "fuentes": [
+        {
+          "nombre": "Axios",
+          "url": "https://www.axios.com/2026/10/22/php-vulnerability-security-update-websites"
+        },
+        {
+          "nombre": "NBC News",
+          "url": "https://www.nbcnews.com/tech/security/critical-vulnerabilities-php-update-systems-rcna604751"
+        },
+        {
+          "nombre": "Unit 42 (Palo Alto)",
+          "url": "https://unit42.paloaltonetworks.com/cve-2026-109618-cve-2026-109619/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Gravedad",
+          "valor": "9,2 / 10",
+          "tendencia": "sube",
+          "detalle": "Puntaje CVSS v4.0 de las dos vulnerabilidades: permiten ejecutar código a distancia sin contraseña."
+        },
+        {
+          "label": "Servidores expuestos",
+          "valor": "22,6 M",
+          "tendencia": "neutral",
+          "detalle": "Instancias potencialmente vulnerables detectadas por Palo Alto Networks (Cortex Xpanse)."
+        },
+        {
+          "label": "Vulnerabilidades",
+          "valor": "2",
+          "tendencia": "neutral",
+          "detalle": "CVE-2026-109618 y CVE-2026-109619, con parches publicados el 21 de octubre."
+        }
+      ],
+      "imagenBusqueda": "data center server racks",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "economia",
+      "hora": "06:30",
+      "seg": 35,
+      "clave": true,
+      "titulo": "El Nasdaq cae 2,6%: el mercado teme el gasto récord en IA",
+      "bajada": "Meta prevé invertir hasta US$145.000 millones este año y reavivó el miedo a que las tecnológicas se endeuden para financiar la inteligencia artificial.",
+      "que": "El jueves, el Nasdaq cerró con una baja de 2,6% (26.008 puntos), su peor sesión desde junio, y el S&P 500 cayó 1,21%. Los fabricantes de chips bajaron cerca de 7%. Meta superó lo esperado en ingresos (US$64.600 millones, +26%), pero proyecta un gasto de capital de entre US$135.000 y 145.000 millones. Tesla recortó su inversión a unos US$20.000 millones y su ganancia cayó 43%.",
+      "quien": "Inversores en tecnológicas y en CEDEARs como Meta, Nvidia o Tesla, muy populares entre los ahorristas argentinos.",
+      "porque": "La duda ya no es si la IA crece, sino quién paga la cuenta. Si las tecnológicas se endeudan más, sus acciones pueden seguir volátiles.",
+      "fuentes": [
+        {
+          "nombre": "CNBC",
+          "url": "https://www.cnbc.com/2026/10/21/stock-market-today-live-updates.html"
+        },
+        {
+          "nombre": "Bloomberg",
+          "url": "https://www.bloomberg.com/news/articles/2026-10-21/stock-market-today-dow-s-p-live-updates"
+        },
+        {
+          "nombre": "Forbes",
+          "url": "https://www.forbes.com/sites/fionariley/2026/10/22/ai-stocks-slide-as-spending-anxiety-festers-after-tesla-meta-earnings/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Inversión de Meta 2026",
+          "valor": "US$135-145 mil M",
+          "tendencia": "sube",
+          "detalle": "Gasto de capital previsto por Meta para este año, centrado en infraestructura de IA."
+        },
+        {
+          "label": "Ingresos de Meta",
+          "valor": "US$64.600 M",
+          "delta": "+26%",
+          "tendencia": "sube",
+          "detalle": "Ingresos del tercer trimestre, por encima de los US$63.400 M que esperaba el mercado."
+        },
+        {
+          "label": "Ganancia de Tesla",
+          "valor": "US$787 M",
+          "delta": "−43%",
+          "tendencia": "baja",
+          "detalle": "Tesla además recortó su inversión anual a unos US$20.000 M."
+        }
+      ],
+      "grafico": {
+        "tipo": "barras",
+        "titulo": "Cierre del jueves 22/10",
+        "unidad": "%",
+        "signo": true,
+        "puntos": [
+          {
+            "label": "Nasdaq",
+            "valor": -2.6
+          },
+          {
+            "label": "S&P 500",
+            "valor": -1.21
+          },
+          {
+            "label": "Fabricantes de chips (aprox.)",
+            "valor": -7
+          }
+        ],
+        "fuente": "CNBC y Bloomberg"
+      },
+      "imagenBusqueda": "Nasdaq MarketSite Times Square",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "argentina",
+      "hora": "06:10",
+      "seg": 30,
+      "titulo": "Arranca el juicio a Cristina y Máximo Kirchner por Hotesur–Los Sauces",
+      "bajada": "El Tribunal Oral Federal 5 unificó en un solo debate las dos causas por lavado de dinero.",
+      "que": "La primera audiencia, con la lectura de las acusaciones, empieza hoy a las 10 en Comodoro Py. Solo en esta jornada los acusados pueden conectarse por Zoom. Habrá audiencias los lunes, viernes y sábados. Entre los acusados están Cristina y Máximo Kirchner, Lázaro Báez y Cristóbal López.",
+      "quien": "La expresidenta y su familia, empresarios vinculados a la obra pública y al negocio hotelero, y la oposición, cuya principal figura vuelve al banquillo.",
+      "porque": "Es un nuevo frente judicial para la principal dirigente opositora y un juicio largo que va a marcar la agenda política de los próximos meses.",
+      "fuentes": [
+        {
+          "nombre": "Infobae",
+          "url": "https://www.infobae.com/judiciales/2026/10/23/hotesur-los-sauces-comienza-el-juicio-por-lavado-de-dinero-contra-cristina-y-maximo-kirchner/"
+        },
+        {
+          "nombre": "Ámbito",
+          "url": "https://www.ambito.com/politica/los-sauces-y-hotesur-el-juicio-contra-cristina-kirchner-comenzara-este-viernes-y-los-imputados-podran-conectarse-manera-virtual-n6336527"
+        },
+        {
+          "nombre": "El Cronista",
+          "url": "https://www.cronista.com/economia-politica/hotesur-y-los-sauces-como-sera-el-juicio-a-cristina-kirchner/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Tribunal",
+          "valor": "TOF 5",
+          "tendencia": "neutral",
+          "detalle": "Tribunal Oral Federal 5, que unificó las causas Hotesur y Los Sauces en un solo debate."
+        },
+        {
+          "label": "Primera audiencia",
+          "valor": "Hoy, 10 hs",
+          "tendencia": "neutral",
+          "detalle": "Lectura de las acusaciones; los acusados pueden conectarse por Zoom solo en esta jornada."
+        },
+        {
+          "label": "Audiencias",
+          "valor": "Lun, vie y sáb",
+          "tendencia": "neutral",
+          "detalle": "El tribunal fijó tres audiencias por semana."
+        }
+      ],
+      "imagenBusqueda": "Comodoro Py tribunales",
+      "fecha": "2026-10-23"
+    },
+    {
+      "cat": "argentina",
+      "hora": "05:50",
+      "seg": 30,
+      "titulo": "La actividad económica cayó 1,7% interanual en agosto",
+      "bajada": "Es la segunda caída consecutiva del EMAE, con la industria y el comercio como los sectores más golpeados.",
+      "que": "Según el INDEC, la actividad bajó 1,7% frente a agosto de 2025, aunque subió 0,1% frente a julio en la medición desestacionalizada. En lo que va del año acumula una suba de 1,2%. La industria y el comercio fueron los sectores que más restaron.",
+      "quien": "Trabajadores de la industria y el comercio, las pymes y las provincias que dependen de la recaudación.",
+      "porque": "Una economía que se frena complica la recaudación, y el dato llega justo cuando suben el riesgo país y el dólar.",
+      "fuentes": [
+        {
+          "nombre": "INDEC",
+          "url": "https://www.indec.gob.ar/uploads/informesdeprensa/emae_10_263A9DC1ED2B.pdf"
+        },
+        {
+          "nombre": "Canal 26",
+          "url": "https://www.canal26.com/economia/2026/10/21/la-actividad-economica-se-estanco-en-agosto-y-cayo-17-en-el-ultimo-ano-segun-en-indec/"
+        }
+      ],
+      "datos": [
+        {
+          "label": "Caídas consecutivas",
+          "valor": "2",
+          "tendencia": "baja",
+          "detalle": "Es la segunda baja interanual seguida del EMAE."
+        }
+      ],
+      "grafico": {
+        "tipo": "barras",
+        "titulo": "EMAE de agosto 2026",
+        "unidad": "%",
+        "signo": true,
+        "puntos": [
+          {
+            "label": "Frente a agosto 2025",
+            "valor": -1.7
+          },
+          {
+            "label": "Frente a julio (desest.)",
+            "valor": 0.1
+          },
+          {
+            "label": "Acumulado enero-agosto",
+            "valor": 1.2
+          }
+        ],
+        "fuente": "INDEC"
+      },
+      "imagenBusqueda": "Puerto de Buenos Aires contenedores",
+      "fecha": "2026-10-23"
+    }
+  ],
+  "mercados": {
+    "nota": "Riesgo país, Merval y dólar: cierre del jueves 22/10.",
+    "indicadores": [
+      {
+        "grupo": "Wall Street",
+        "nombre": "S&P 500",
+        "valor": "7.627",
+        "var": -0.47,
+        "hora": "Hoy"
+      },
+      {
+        "grupo": "Wall Street",
+        "nombre": "Nasdaq",
+        "valor": "25.998",
+        "var": -0.04,
+        "hora": "Hoy"
+      },
+      {
+        "grupo": "Wall Street",
+        "nombre": "Dow Jones",
+        "valor": "52.222",
+        "var": -1.22,
+        "hora": "Hoy"
+      },
+      {
+        "grupo": "Commodities",
+        "nombre": "Petróleo Brent",
+        "valor": "US$116,02",
+        "var": 2.52,
+        "hora": "Hoy"
+      },
+      {
+        "grupo": "Commodities",
+        "nombre": "Oro (onza)",
+        "valor": "US$4.033",
+        "var": -0.67,
+        "hora": "Hoy"
+      },
+      {
+        "grupo": "Tasas",
+        "nombre": "Bono EE.UU. 10 años",
+        "valor": "5,02%",
+        "var": null,
+        "detalle": "−0,11 p.p.",
+        "hora": "22/10"
+      },
+      {
+        "grupo": "Argentina",
+        "nombre": "Riesgo país",
+        "valor": "704 pb",
+        "var": 4.5,
+        "hora": "22/10"
+      },
+      {
+        "grupo": "Argentina",
+        "nombre": "MSCI Merval",
+        "valor": "97.993",
+        "var": -1.6,
+        "hora": "22/10"
+      },
+      {
+        "grupo": "Dólar",
+        "nombre": "Oficial (BNA)",
+        "valor": "$1.550",
+        "var": null,
+        "hora": "22/10"
+      },
+      {
+        "grupo": "Dólar",
+        "nombre": "Contado con liqui",
+        "valor": "$1.647,50",
+        "var": null,
+        "hora": "22/10"
+      },
+      {
+        "grupo": "ADRs",
+        "nombre": "YPF (NYSE)",
+        "valor": "US$49,12",
+        "var": -2.5,
+        "hora": "22/10"
+      },
+      {
+        "grupo": "ADRs",
+        "nombre": "Ternium (NYSE)",
+        "valor": "−6,1%",
+        "var": null,
+        "hora": "22/10",
+        "detalle": "mayor baja del día"
+      }
+    ],
+    "fuentesDatos": [
+      {
+        "nombre": "Financial Modeling Prep (índices y commodities)",
+        "url": "https://financialmodelingprep.com"
+      },
+      {
+        "nombre": "Infobae (cierre local)",
+        "url": "https://infobae.com/economia/2026/10/22/jornada-financiera-las-acciones-argentinas-cayeron-hasta-6-en-wall-street-y-el-riesgo-pais-supero-los-700-puntos"
+      },
+      {
+        "nombre": "Perfil (dólar y riesgo país)",
+        "url": "https://www.perfil.com/noticias/economia/el-riesgo-pais-volvio-a-saltar-y-supero-los-700-puntos-en-una-jornada-caliente-para-el-dolar-a40.phtml"
+      }
+    ],
+    "noticias": [
+      {
+        "cat": "mercados",
+        "hora": "07:30",
+        "seg": 30,
+        "titulo": "Se enfrían las apuestas a otra suba de tasas de la Fed",
+        "bajada": "La salida de las acciones hacia los bonos del Tesoro hizo caer la tasa a 10 años a 5,02%.",
+        "que": "En plena caída de las tecnológicas, los inversores compraron bonos del Tesoro: la tasa a 10 años bajó 11 puntos básicos, a 5,02%. Según Bloomberg, eso redujo las apuestas a una nueva suba de la Reserva Federal en 2026.",
+        "quien": "Deudores en dólares, países emergentes como la Argentina y los ahorristas en bonos.",
+        "porque": "Las tasas cercanas al 5% en EE.UU. compiten con los bonos argentinos por el capital: si bajan, ayudan a contener el riesgo país.",
+        "fuentes": [
+          {
+            "nombre": "Bloomberg",
+            "url": "https://www.bloomberg.com/news/articles/2026-10-21/stock-market-today-dow-s-p-live-updates"
+          },
+          {
+            "nombre": "CNBC",
+            "url": "https://www.cnbc.com/2026/10/21/stock-market-today-live-updates.html"
+          }
+        ],
+        "datos": [
+          {
+            "label": "Bono EE.UU. 10 años",
+            "valor": "5,02%",
+            "delta": "−0,11 p.p.",
+            "tendencia": "baja",
+            "detalle": "Rendimiento al cierre del jueves: bajó 11 puntos básicos por la compra de bonos (Bloomberg)."
+          }
+        ],
+        "imagenBusqueda": "Marriner S. Eccles Federal Reserve Board Building",
+        "fecha": "2026-10-23"
+      },
+      {
+        "cat": "mercados",
+        "hora": "07:10",
+        "seg": 30,
+        "titulo": "CEDEARs de tecnológicas bajo presión tras los balances de Meta y Tesla",
+        "bajada": "Las acciones ligadas a la inteligencia artificial lideraron las bajas, y hoy Oracle paga dividendo.",
+        "que": "Meta llegó a caer 6% en la primera media hora del jueves. Nvidia, Micron y Broadcom cedían cerca de 2,5%, y AMD e Intel alrededor de 5%. Hoy, Oracle paga US$0,50 por acción, que también reciben, en proporción, quienes tienen el CEDEAR.",
+        "quien": "Los ahorristas argentinos que invierten en tecnológicas a través de CEDEARs.",
+        "porque": "El precio en pesos de un CEDEAR combina la acción en Wall Street y el dólar contado con liqui, así que conviene mirar las dos cosas antes de operar.",
+        "fuentes": [
+          {
+            "nombre": "Forbes",
+            "url": "https://www.forbes.com/sites/fionariley/2026/10/22/ai-stocks-slide-as-spending-anxiety-festers-after-tesla-meta-earnings/"
+          },
+          {
+            "nombre": "Ámbito",
+            "url": "https://www.ambito.com/finanzas/cedears-las-24-acciones-que-pagan-dividendos-dolares-octubre-n6327539"
+          }
+        ],
+        "datos": [
+          {
+            "label": "Dividendo de Oracle",
+            "valor": "US$0,50",
+            "tendencia": "neutral",
+            "detalle": "Por acción, pagado hoy; los tenedores del CEDEAR lo cobran en proporción."
+          }
+        ],
+        "grafico": {
+          "tipo": "barras",
+          "titulo": "Bajas durante la rueda del jueves (aprox.)",
+          "unidad": "%",
+          "signo": true,
+          "puntos": [
+            {
+              "label": "Meta",
+              "valor": -6
+            },
+            {
+              "label": "AMD",
+              "valor": -5
+            },
+            {
+              "label": "Intel",
+              "valor": -5
+            },
+            {
+              "label": "Nvidia",
+              "valor": -2.5
+            }
+          ],
+          "fuente": "Forbes"
+        },
+        "imagenBusqueda": "New York Stock Exchange facade",
+        "fecha": "2026-10-23"
+      }
+    ]
+  },
+  "tendencias": [
+    {
+      "cat": "mundo",
+      "label": "Israel",
+      "txt": "Vota el martes 27: Netanyahu llega a su elección más difícil frente al partido de Gadi Eisenkot."
+    },
+    {
+      "cat": "mundo",
+      "label": "Ucrania",
+      "txt": "Putin pidió que las negociaciones de paz se centren en garantías de seguridad para toda Europa."
+    },
+    {
+      "cat": "economia",
+      "label": "Dividendos",
+      "txt": "Oracle paga hoy US$0,50 por acción, y también lo cobran quienes tienen el CEDEAR."
+    },
+    {
+      "cat": "mundo",
+      "label": "Venezuela",
+      "txt": "Se hizo la primera protesta nacional en casi dos años para reclamar elecciones."
+    },
+    {
+      "cat": "tech",
+      "label": "Uruguay",
+      "txt": "Agesic prevé restablecer hoy los sitios del Estado apagados por la falla de PHP."
+    }
+  ],
+  "semanal": {
+    "titulo": "La semana en 5 claves",
+    "intro": "Petróleo por encima de US$110, dudas sobre el gasto en inteligencia artificial, riesgo país arriba de 700 y una falla informática global. Además, dos elecciones decisivas en los próximos días: Brasil el domingo e Israel el martes.",
+    "temas": [
+      {
+        "cat": "mundo",
+        "titulo": "Vuelve el riesgo de guerra con Irán y el crudo se dispara",
+        "resumen": "Los planes de EE.UU. e Israel para volver a atacar Irán después del 3 de noviembre y los ataques a petroleros en Ormuz llevaron el Brent a máximos desde mayo.",
+        "mirar": "Las elecciones de medio término en EE.UU. del 3 de noviembre y el tránsito por Ormuz.",
+        "fuentes": [
+          {
+            "nombre": "CNBC",
+            "url": "https://www.cnbc.com/amp/2026/10/22/oil-prices-today-wti-brent-saudi-arabia.html"
+          },
+          {
+            "nombre": "CBS News",
+            "url": "https://www.cbsnews.com/live-updates/iran-war-us-strait-of-hormuz-oil-gas-price-strikes/"
+          }
+        ]
+      },
+      {
+        "cat": "economia",
+        "titulo": "Wall Street duda de la factura de la inteligencia artificial",
+        "resumen": "Meta proyecta hasta US$145.000 millones de inversión y Tesla recortó la suya. El Nasdaq tuvo su peor día desde junio y los chips cayeron cerca de 7%.",
+        "mirar": "Los balances de las grandes tecnológicas que todavía faltan presentar.",
+        "fuentes": [
+          {
+            "nombre": "Bloomberg",
+            "url": "https://www.bloomberg.com/news/articles/2026-10-21/stock-market-today-dow-s-p-live-updates"
+          },
+          {
+            "nombre": "Forbes",
+            "url": "https://www.forbes.com/sites/fionariley/2026/10/22/ai-stocks-slide-as-spending-anxiety-festers-after-tesla-meta-earnings/"
+          }
+        ]
+      },
+      {
+        "cat": "argentina",
+        "titulo": "Riesgo país arriba de 700 y una economía que se frena",
+        "resumen": "El riesgo país sube 16% en octubre y el EMAE de agosto cayó 1,7% interanual, la segunda baja consecutiva.",
+        "mirar": "Cómo planea el Gobierno pagar los próximos vencimientos de deuda.",
+        "fuentes": [
+          {
+            "nombre": "Perfil",
+            "url": "https://www.perfil.com/noticias/economia/el-riesgo-pais-volvio-a-saltar-y-supero-los-700-puntos-en-una-jornada-caliente-para-el-dolar-a40.phtml"
+          },
+          {
+            "nombre": "INDEC",
+            "url": "https://www.indec.gob.ar/uploads/informesdeprensa/emae_10_263A9DC1ED2B.pdf"
+          }
+        ]
+      },
+      {
+        "cat": "tech",
+        "titulo": "La falla de PHP pone en jaque a millones de sitios",
+        "resumen": "Dos vulnerabilidades críticas obligaron a gobiernos y empresas a desconectar páginas web mientras aplican los parches.",
+        "mirar": "Si aparecen ataques activos y qué pasa con las versiones viejas de PHP sin parche.",
+        "fuentes": [
+          {
+            "nombre": "Axios",
+            "url": "https://www.axios.com/2026/10/22/php-vulnerability-security-update-websites"
+          },
+          {
+            "nombre": "NBC News",
+            "url": "https://www.nbcnews.com/tech/security/critical-vulnerabilities-php-update-systems-rcna604751"
+          }
+        ]
+      },
+      {
+        "cat": "mundo",
+        "titulo": "Dos elecciones en cuatro días: Brasil e Israel",
+        "resumen": "Lula y Flávio Bolsonaro llegan empatados al balotaje del domingo, e Israel renueva la Knesset el martes con Netanyahu bajo presión.",
+        "mirar": "El resultado del domingo 25 en Brasil y la formación de gobierno en Israel.",
+        "fuentes": [
+          {
+            "nombre": "Reuters",
+            "url": "https://www.internazionale.it/ultime-notizie-reuters/2026/10/23/flavio-bolsonaro-and-lula-about-even-ahead-of-brazil-runoff-datafolha-poll-shows"
+          },
+          {
+            "nombre": "EFE",
+            "url": "https://www.infobae.com/america/agencias/2026/10/23/temas-del-dia-de-efe-internacional-del-viernes-23-de-octubre-de-2026-1200-gmt/"
+          }
+        ]
+      }
+    ]
+  }
+}

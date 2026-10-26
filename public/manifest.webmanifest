@@ -1,0 +1,25 @@
+{
+  "name": "5M News",
+  "short_name": "5M News",
+  "description": "Las noticias más importantes de Argentina y el mundo, para leer en menos de 5 minutos.",
+  "id": "/",
+  "start_url": "/?app=1",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E5372A",
+  "categories": ["news"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Argentina", "url": "/?app=1#argentina", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mundo", "url": "/?app=1#mundo", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mercados", "url": "/?app=1#mercados", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

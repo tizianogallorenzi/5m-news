@@ -17,7 +17,11 @@ export interface Store {
 
 const URL_BASE = () => (process.env.SUPABASE_URL ?? "").replace(/\/$/, "");
 const CLAVE = () => process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-export const usaSupabase = () => !!URL_BASE() && !!CLAVE();
+// Modo recomendado: clave publicable + token propio, a través de la función public.blobs_api (security definer)
+const TOKEN = () => process.env.SUPABASE_BLOBS_TOKEN ?? "";
+const PUBLICABLE = () => process.env.SUPABASE_PUBLISHABLE_KEY ?? "";
+const usaRpc = () => !!URL_BASE() && !!TOKEN() && !!PUBLICABLE();
+export const usaSupabase = () => usaRpc() || (!!URL_BASE() && !!CLAVE());
 
 /** Las claves nuevas (sb_secret_…) van sólo en `apikey`; las viejas (JWT service_role) también como Bearer. */
 const cabeceras = (extra: Record<string, string> = {}) => {
@@ -46,6 +50,51 @@ async function rest(metodo: string, params: Record<string, string>, body?: unkno
 }
 
 const escaparLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+async function rpc(op: string, args: Record<string, unknown>) {
+  for (let intento = 1; ; intento++) {
+    const res = await fetch(`${URL_BASE()}/rest/v1/rpc/blobs_api`, {
+      method: "POST",
+      headers: { apikey: PUBLICABLE(), "content-type": "application/json" },
+      body: JSON.stringify({ p_token: TOKEN(), p_op: op, ...args }),
+      signal: AbortSignal.timeout(15_000),
+    }).catch((e) => e as Error);
+    if (res instanceof Response && res.ok) return res.json();
+    const reintentable = !(res instanceof Response) || res.status >= 500 || res.status === 429;
+    if (!reintentable || intento >= 3) {
+      const detalle = res instanceof Response ? `${res.status} ${(await res.text()).slice(0, 200)}` : res.message;
+      throw new Error(`Supabase (blobs_api ${op}): ${detalle}`);
+    }
+    await new Promise((r) => setTimeout(r, 300 * intento));
+  }
+}
+
+function storeRpc(nombre: string): Store {
+  const set = async (key: string, value: string | ArrayBuffer | Blob, opts: Escritura = {}) => {
+    const texto = typeof value === "string" ? value : value instanceof Blob ? await value.text() : new TextDecoder().decode(value);
+    const r = await rpc("set", { p_store: nombre, p_key: key, p_value: texto, p_only_if_new: !!opts.onlyIfNew });
+    return { modified: !!r?.modified };
+  };
+  return {
+    async get(key, opts = {}) {
+      const r = await rpc("get", { p_store: nombre, p_key: key });
+      if (!r || typeof r.value !== "string") return null;
+      if (opts.type === "json") return JSON.parse(r.value);
+      if (opts.type === "arrayBuffer") return new TextEncoder().encode(r.value).buffer;
+      if (opts.type === "blob") return new Blob([r.value]);
+      return r.value;
+    },
+    set,
+    setJSON: (key, value, opts) => set(key, JSON.stringify(value), opts),
+    async delete(key) {
+      await rpc("delete", { p_store: nombre, p_key: key });
+    },
+    async list({ prefix = "" } = {}) {
+      const claves = ((await rpc("list", { p_store: nombre, p_prefix: prefix })) ?? []) as string[];
+      return { blobs: claves.map((key) => ({ key, etag: "" })), directories: [] };
+    },
+  };
+}
 
 function storeSupabase(nombre: string): Store {
   const filtro = (key: string) => ({ store: `eq.${nombre}`, key: `eq.${key}` });
@@ -104,5 +153,5 @@ function storeNetlify(opts: Opciones): Store {
 
 export function getStore(opts: string | Opciones): Store {
   const o = typeof opts === "string" ? { name: opts } : opts;
-  return usaSupabase() ? storeSupabase(o.name) : storeNetlify(o);
+  return usaRpc() ? storeRpc(o.name) : usaSupabase() ? storeSupabase(o.name) : storeNetlify(o);
 }

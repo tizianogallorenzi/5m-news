@@ -16,7 +16,13 @@ services:
       # --- Datos (suscriptores, ediciones, fotos, notificaciones): Supabase ---
       - key: SUPABASE_URL
         value: https://mhizyxhuhtjnctcfikdv.supabase.co
-      - key: SUPABASE_SECRET_KEY       # Supabase > Project Settings > API Keys > Secret keys
+      # Acceso por la función public.blobs_api: clave publicable + token propio (privado.ajustes)
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_BLOBS_TOKEN
+        sync: false
+      # Alternativa: clave secreta (Project Settings > API Keys > Secret keys)
+      - key: SUPABASE_SECRET_KEY
         sync: false
       # --- Modelo que redacta el briefing: Gemini (gratis, aistudio.google.com) ---
       - key: GEMINI_API_KEY

@@ -1,10 +1,13 @@
-// Service worker de 5M News: hace instalable la web y la abre aunque no haya conexión.
-// Red primero (las noticias se actualizan cada hora); si no hay red, la última edición guardada.
-const CACHE = "5m-v2";
+// Service worker de 5M News: hace instalable la web, la abre al instante y funciona sin conexión.
+// - Página: se muestra la última versión guardada al toque y se actualiza por detrás (así no se ve la
+//   pantalla de "despertando" del plan gratuito de Render).
+// - briefing.json: red con 2,5 s de espera; si tarda, la última edición guardada, y cuando llega la nueva
+//   se avisa a la página para que ofrezca actualizar.
+const CACHE = "5m-v3";
 const BASE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).catch(() => {}).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {
@@ -13,25 +16,65 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+/** Sólo se guarda la página real de 5M News (no la pantalla de espera de Render ni errores). */
+async function esPaginaPropia(res) {
+  if (!res || !res.ok || !(res.headers.get("content-type") || "").includes("text/html")) return false;
+  return (await res.clone().text()).includes('id="hero"');
+}
+const esBriefing = (res) => res && res.ok && (res.headers.get("content-type") || "").includes("application/json");
+
+async function guardar(clave, res) {
+  const c = await caches.open(CACHE);
+  await c.put(clave, res);
+}
+
+async function avisarClientes(tipo) {
+  for (const cl of await self.clients.matchAll({ type: "window" })) cl.postMessage({ tipo });
+}
+
+async function pagina(req) {
+  const guardada = await caches.match("/");
+  const red = fetch(req)
+    .then(async (res) => {
+      if (await esPaginaPropia(res)) await guardar("/", res.clone());
+      return res;
+    })
+    .catch(() => null);
+  if (guardada) return guardada; // al instante; la red actualiza la copia para la próxima vez
+  return (await red) || Response.error();
+}
+
+async function briefing(req) {
+  const guardado = await caches.match("/briefing.json");
+  const red = fetch(req)
+    .then(async (res) => {
+      if (esBriefing(res)) {
+        await guardar("/briefing.json", res.clone());
+        return res;
+      }
+      return null;
+    })
+    .catch(() => null);
+  if (!guardado) return (await red) || Response.error();
+  const rapida = await Promise.race([red, new Promise((ok) => setTimeout(() => ok("tarde"), 2500))]);
+  if (rapida && rapida !== "tarde") return rapida;
+  // La red tardó (servidor despertando): edición guardada ahora y aviso cuando llegue la nueva
+  red.then((res) => res && avisarClientes("briefing-nuevo"));
+  return guardado;
+}
+
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   const url = new URL(req.url);
   // Sólo GET del propio sitio; nunca la API (suscripciones, confirmaciones, admin)
   if (req.method !== "GET" || url.origin !== location.origin || url.pathname.startsWith("/api/") || url.pathname.startsWith("/.netlify/")) return;
 
-  const esPagina = req.mode === "navigate";
-  const clave = esPagina ? "/" : url.pathname === "/briefing.json" ? "/briefing.json" : req;
-  e.respondWith(
-    fetch(req)
-      .then((res) => {
-        if (res.ok && (esPagina || url.pathname === "/briefing.json" || url.pathname.startsWith("/icons/"))) {
-          const copia = res.clone();
-          caches.open(CACHE).then((c) => c.put(clave, copia));
-        }
-        return res;
-      })
-      .catch(() => caches.match(clave).then((r) => r || Response.error())),
-  );
+  if (req.mode === "navigate") return e.respondWith(pagina(req));
+  if (url.pathname === "/briefing.json") return e.respondWith(briefing(req));
+  if (url.pathname.startsWith("/icons/")) {
+    return e.respondWith(caches.match(req).then((r) => r || fetch(req).then((res) => (res.ok && guardar(req, res.clone()), res))));
+  }
+  e.respondWith(fetch(req).catch(() => caches.match(req).then((r) => r || Response.error())));
 });
 
 // ---------- Notificaciones (briefing de las 7:00 y Resumen de los Jueves) ----------

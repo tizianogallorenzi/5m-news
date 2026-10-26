@@ -1,16 +1,11 @@
-# Reemplaza las funciones programadas de Netlify (Render free no incluye cron jobs).
+# Las tareas programadas corren en Supabase (pg_cron + pg_net: 5m-despertar, 5m-actualizar, 5m-diario,
+# 5m-jueves-email, 5m-jueves-notif). Este workflow queda para lanzarlas a mano desde la pestaña Actions.
 # Llama a los endpoints /api/cron/* del servicio en Render; eso además lo despierta si estaba dormido.
 # La URL del servicio está en env.RENDER_URL (o en la variable del repo RENDER_URL si se define).
 # CRON_SECRET es opcional: sólo si se configuró también en Render.
 name: Tareas programadas 5M News
 
 on:
-  schedule:
-    - cron: "0 * * * *"     # cada hora: actualización del briefing
-    - cron: "50 9 * * 1-5"  # 06:50 ART lunes a viernes: despierta el servicio antes del envío
-    - cron: "0 10 * * 1-5"  # 07:00 ART lunes a viernes: email + notificación del briefing
-    - cron: "50 21 * * 4"   # 18:50 ART jueves: despierta el servicio
-    - cron: "0 22 * * 4"    # 19:00 ART jueves: Resumen de los Jueves (email + notificación)
   workflow_dispatch:
     inputs:
       tarea:

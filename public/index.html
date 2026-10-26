@@ -1138,14 +1138,19 @@
 
     // El briefing se rehace cada hora: si hay una edición nueva mientras la página está abierta, se avisa
     let VERSION_ACTUAL = '';
-    setInterval(() => {
-      if (document.hidden || document.getElementById('aviso-nuevas')) return;
+    function chequearNuevas(forzar) {
+      if ((!forzar && document.hidden) || document.getElementById('aviso-nuevas')) return;
       fetch('briefing.json', { cache: 'no-cache' }).then((r) => r.ok ? r.json() : null).then((d) => {
         if (!d || !d.actualizado || !VERSION_ACTUAL || d.actualizado === VERSION_ACTUAL) return;
         document.body.insertAdjacentHTML('beforeend', `<button id="aviso-nuevas" type="button" onclick="location.reload()"
           class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-5 py-2.5 text-sm font-semibold shadow-lg hover:opacity-90">Hay noticias nuevas · Actualizar</button>`);
       }).catch(() => {});
-    }, 10 * 60 * 1000);
+    }
+    setInterval(chequearNuevas, 10 * 60 * 1000);
+    // La app abre con la última edición guardada; cuando el service worker recibe la nueva, avisa
+    if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data && e.data.tipo === 'briefing-nuevo') chequearNuevas(true);
+    });
 
     fetch('briefing.json', { cache: 'no-cache' })
       .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })

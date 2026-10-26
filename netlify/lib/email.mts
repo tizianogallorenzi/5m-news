@@ -201,7 +201,7 @@ const button = (href: string, label: string) =>
   `<a href="${esc(href)}" style="display:inline-block;background:${C.pulse};color:#fff;font:600 15px/1 ${SANS};padding:14px 24px;border-radius:999px;text-decoration:none">${esc(label)}</a>`;
 
 const prefsLine = (sub: Pick<Subscriber, "daily" | "weekly">) =>
-  [sub.daily && "briefing diario (7:00 AM)", sub.weekly && "resumen de los jueves"].filter(Boolean).join(" y ");
+  [sub.daily && "briefing diario (7:00 AM)", sub.weekly && "resumen de los jueves (7:00 PM)"].filter(Boolean).join(" y ");
 
 function footer(sub: Pick<Subscriber, "daily" | "weekly">, links: LinkSet) {
   return `Recibís este email porque te suscribiste a 5M News (etapa de prueba interna): ${prefsLine(sub)}.<br>

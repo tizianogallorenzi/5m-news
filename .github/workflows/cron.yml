@@ -9,9 +9,8 @@ on:
     - cron: "0 * * * *"     # cada hora: actualización del briefing
     - cron: "50 9 * * 1-5"  # 06:50 ART lunes a viernes: despierta el servicio antes del envío
     - cron: "0 10 * * 1-5"  # 07:00 ART lunes a viernes: email + notificación del briefing
-    - cron: "30 10 * * 4"   # 07:30 ART jueves: Resumen de los Jueves por email
     - cron: "50 21 * * 4"   # 18:50 ART jueves: despierta el servicio
-    - cron: "0 22 * * 4"    # 19:00 ART jueves: notificación del Resumen semanal
+    - cron: "0 22 * * 4"    # 19:00 ART jueves: Resumen de los Jueves (email + notificación)
   workflow_dispatch:
     inputs:
       tarea:
@@ -34,9 +33,8 @@ jobs:
             "0 * * * *")    echo "tarea=hourly" >> "$GITHUB_OUTPUT" ;;
             "50 9 * * 1-5") echo "tarea=despertar" >> "$GITHUB_OUTPUT" ;;
             "0 10 * * 1-5") echo "tarea=daily" >> "$GITHUB_OUTPUT" ;;
-            "30 10 * * 4")  echo "tarea=weekly" >> "$GITHUB_OUTPUT" ;;
             "50 21 * * 4")  echo "tarea=despertar" >> "$GITHUB_OUTPUT" ;;
-            "0 22 * * 4")   echo "tarea=weeklypush" >> "$GITHUB_OUTPUT" ;;
+            "0 22 * * 4")   echo "tarea=weekly weeklypush" >> "$GITHUB_OUTPUT" ;;
             *)              echo "tarea=${{ github.event.inputs.tarea }}" >> "$GITHUB_OUTPUT" ;;
           esac
       - name: Despertar el servicio (Render free duerme tras 15 min sin uso)
@@ -49,6 +47,9 @@ jobs:
       - name: Disparar tarea
         if: steps.t.outputs.tarea != 'despertar'
         run: |
-          curl -fsS --max-time 60 -X POST \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            "$RENDER_URL/api/cron/${{ steps.t.outputs.tarea }}"
+          for tarea in ${{ steps.t.outputs.tarea }}; do
+            curl -fsS --max-time 60 -X POST \
+              -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+              "$RENDER_URL/api/cron/$tarea"
+            echo
+          done

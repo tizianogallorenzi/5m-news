@@ -167,7 +167,7 @@ async function enviar(r: Response | void, res: ServerResponse, extra: Record<str
 const CRON: Record<string, string> = {
   hourly: "briefing-pipeline", // "0 * * * *"  actualización del briefing cada hora
   daily: "send-daily",         // "0 10 * * 1-5"  email + notificación 7:00 ART, lunes a viernes
-  weekly: "send-weekly",       // "30 10 * * 4"  Resumen de los Jueves por email (07:30 ART)
+  weekly: "send-weekly",       // "0 22 * * 4"  Resumen de los Jueves por email (19:00 ART)
   weeklypush: "send-weekly-push", // "0 22 * * 4"  notificación del Resumen semanal (19:00 ART)
 };
 

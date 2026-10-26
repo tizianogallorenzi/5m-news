@@ -1,6 +1,7 @@
 # Reemplaza las funciones programadas de Netlify (Render free no incluye cron jobs).
 # Llama a los endpoints /api/cron/* del servicio en Render; eso además lo despierta si estaba dormido.
-# Secrets del repo (Settings > Secrets and variables > Actions): RENDER_URL y CRON_SECRET.
+# La URL del servicio está en env.RENDER_URL (o en la variable del repo RENDER_URL si se define).
+# CRON_SECRET es opcional: sólo si se configuró también en Render.
 name: Tareas programadas 5M News
 
 on:
@@ -15,6 +16,9 @@ on:
         description: "hourly | daily | weekly"
         required: true
         default: hourly
+
+env:
+  RENDER_URL: ${{ vars.RENDER_URL || 'https://5m-news.onrender.com' }}
 
 jobs:
   disparar:
@@ -34,7 +38,7 @@ jobs:
       - name: Despertar el servicio (Render free duerme tras 15 min sin uso)
         run: |
           for i in 1 2 3 4 5 6; do
-            curl -fsS --max-time 60 "${{ secrets.RENDER_URL }}/healthz" && exit 0
+            curl -fsS --max-time 60 "$RENDER_URL/healthz" && exit 0
             sleep 15
           done
           exit 1
@@ -43,4 +47,4 @@ jobs:
         run: |
           curl -fsS --max-time 60 -X POST \
             -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.RENDER_URL }}/api/cron/${{ steps.t.outputs.tarea }}"
+            "$RENDER_URL/api/cron/${{ steps.t.outputs.tarea }}"

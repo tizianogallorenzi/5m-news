@@ -7,7 +7,7 @@ sirve `public/` y reemplaza lo que en Netlify hacía la plataforma:
 |---|---|
 | Funciones con `config.path` | Mismas rutas (`/api/subscribe`, `/api/confirm`, `/api/unsubscribe`, `/api/admin/newsletter`, `/api/push/*`, `/briefing.json`) |
 | Función de fondo `briefing-update-background` | Misma URL, responde 202 y sigue trabajando |
-| Funciones programadas (`schedule`) | `POST /api/cron/hourly`, `/api/cron/daily`, `/api/cron/weekly` (header `x-cron-secret`), disparados por GitHub Actions (`.github/workflows/cron.yml`) |
+| Funciones programadas (`schedule`) | `POST /api/cron/hourly`, `/api/cron/daily`, `/api/cron/weekly`, disparados por GitHub Actions (`.github/workflows/cron.yml`). Límites del servidor: hourly cada 50 min como mínimo, daily lunes a viernes, weekly jueves |
 | Netlify Blobs | Tabla `public.blobs` en Supabase (proyecto `5m-news`). `render/blobs-supabase.mts` tiene la misma interfaz y el build lo usa en lugar de `@netlify/blobs` |
 | AI Gateway (clave de Claude automática) | `ANTHROPIC_API_KEY` propia |
 | Encabezados de `netlify.toml` | Los mismos, aplicados por el servidor |
@@ -20,8 +20,8 @@ sirve `public/` y reemplaza lo que en Netlify hacía la plataforma:
 | `SUPABASE_SECRET_KEY` | Supabase → proyecto 5m-news → Project Settings → API Keys → Secret keys (`sb_secret_…`) |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (se paga por uso en Anthropic) |
 | `BREVO_API_KEY`, `BREVO_SENDER`, `RESEND_API_KEY`, `ADMIN_KEY` | Los mismos que en Netlify |
-| `SITE_URL` | La URL de Render, por ejemplo `https://5m-news.onrender.com` |
-| `CRON_SECRET` | Render lo genera solo; copialo a GitHub |
+| `SITE_URL` | Opcional: sólo con dominio propio (si no, se usa la URL de Render) |
+| `CRON_SECRET` | Opcional: si se define, cargalo también como secret del repo |
 | `NETLIFY_SITE_ID`, `NETLIFY_BLOBS_TOKEN` | Sólo para copiar una vez los datos viejos (ver abajo); después se pueden borrar |
 | Opcionales | `FMP_API_KEY`, `BRIEFING_MODEL`, `VAPID_SUBJECT`, `EMAIL_FROM` |
 

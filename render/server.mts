@@ -167,6 +167,25 @@ const CRON: Record<string, string> = {
   weekly: "send-weekly",       // "30 10 * * 4"  Resumen de los Jueves
 };
 
+/**
+ * Límites de las tareas programadas, para que llamarlas de más no genere gastos ni envíos repetidos:
+ * hourly como máximo cada 50 min; daily sólo lunes a viernes y weekly sólo jueves (hora de Argentina).
+ * El envío de cada edición además queda registrado y no se repite en el día (lógica original).
+ */
+async function cronNoPermitido(cron: string): Promise<string | null> {
+  const ahora = new Date();
+  const diaART = new Intl.DateTimeFormat("en-US", { timeZone: "America/Argentina/Buenos_Aires", weekday: "short" }).format(ahora);
+  if (cron === "daily" && (diaART === "Sat" || diaART === "Sun")) return "El briefing diario sale de lunes a viernes.";
+  if (cron === "weekly" && diaART !== "Thu") return "El Resumen de los Jueves sale sólo los jueves.";
+  if (cron === "hourly") {
+    const control = getStore("cron-control");
+    const ultimo = Number((await control.get("hourly")) ?? 0);
+    if (ahora.getTime() - ultimo < 50 * 60_000) return "La actualización ya corrió hace menos de 50 minutos.";
+    await control.set("hourly", String(ahora.getTime()));
+  }
+  return null;
+}
+
 const server = createServer(async (req, res) => {
   const inicio = Date.now();
   try {
@@ -191,11 +210,14 @@ const server = createServer(async (req, res) => {
     // /api/cron/<hourly|daily|weekly>: lo llama el programador externo (GitHub Actions / cron-job.org)
     const cron = url.pathname.match(/^\/api\/cron\/([a-z]+)$/)?.[1];
     if (cron) {
+      // CRON_SECRET es opcional: si está configurado se exige; si no, valen los límites de abajo
       const secreto = process.env.CRON_SECRET;
       const dado = String(req.headers["x-cron-secret"] ?? url.searchParams.get("key") ?? "");
-      if (!secreto || !iguales(dado, secreto)) return void res.writeHead(401).end("No autorizado");
+      if (secreto && !iguales(dado, secreto)) return void res.writeHead(401).end("No autorizado");
       const mod = CRON[cron] && FUNCIONES[CRON[cron]];
       if (!mod) return void res.writeHead(404).end("Tarea desconocida");
+      const motivo = await cronNoPermitido(cron);
+      if (motivo) return void res.writeHead(429, { "content-type": "application/json" }).end(JSON.stringify({ ok: false, motivo }));
       // Se responde enseguida y la tarea sigue en segundo plano (como en Netlify)
       res.writeHead(202, { "content-type": "application/json" }).end(JSON.stringify({ ok: true, tarea: CRON[cron] }));
       Promise.resolve(mod.default(await aRequest(req), contexto(req))).catch((e) => console.error(`[cron ${cron}]`, e));

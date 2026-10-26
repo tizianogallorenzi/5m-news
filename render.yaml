@@ -18,7 +18,10 @@ services:
         value: https://mhizyxhuhtjnctcfikdv.supabase.co
       - key: SUPABASE_SECRET_KEY       # Supabase > Project Settings > API Keys > Secret keys
         sync: false
-      # --- Claude: clave propia (en Netlify la ponía el AI Gateway) ---
+      # --- Modelo que redacta el briefing: Gemini (gratis, aistudio.google.com) ---
+      - key: GEMINI_API_KEY
+        sync: false
+      # Alternativa paga: si no hay GEMINI_API_KEY se usa Claude con esta clave
       - key: ANTHROPIC_API_KEY
         sync: false
       # --- Emails (mismos valores que en Netlify) ---
@@ -36,5 +39,5 @@ services:
         value: 99b83157-8c01-41cf-a7f9-a55345d59529
       - key: NETLIFY_BLOBS_TOKEN
         sync: false
-      # Opcionales: SITE_URL (dominio propio; si no, se usa la URL de Render), CRON_SECRET,
+      # Opcionales: GEMINI_MODEL (por defecto gemini-flash-latest), SITE_URL (dominio propio; si no, se usa la URL de Render), CRON_SECRET,
       # FMP_API_KEY, BRIEFING_MODEL, VAPID_SUBJECT, EMAIL_FROM

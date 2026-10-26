@@ -9,7 +9,7 @@ sirve `public/` y reemplaza lo que en Netlify hacía la plataforma:
 | Función de fondo `briefing-update-background` | Misma URL, responde 202 y sigue trabajando |
 | Funciones programadas (`schedule`) | `POST /api/cron/hourly`, `/api/cron/daily`, `/api/cron/weekly`, disparados por GitHub Actions (`.github/workflows/cron.yml`). Límites del servidor: hourly cada 50 min como mínimo, daily lunes a viernes, weekly jueves |
 | Netlify Blobs | Tabla `public.blobs` en Supabase (proyecto `5m-news`). `render/blobs-supabase.mts` tiene la misma interfaz y el build lo usa en lugar de `@netlify/blobs` |
-| AI Gateway (clave de Claude automática) | `ANTHROPIC_API_KEY` propia |
+| AI Gateway (clave de Claude automática) | `GEMINI_API_KEY` gratuita (Google AI Studio); `ANTHROPIC_API_KEY` queda como alternativa paga |
 | Encabezados de `netlify.toml` | Los mismos, aplicados por el servidor |
 
 ## Variables de entorno
@@ -18,7 +18,8 @@ sirve `public/` y reemplaza lo que en Netlify hacía la plataforma:
 |---|---|
 | `SUPABASE_URL` | `https://mhizyxhuhtjnctcfikdv.supabase.co` (ya está en `render.yaml`) |
 | `SUPABASE_SECRET_KEY` | Supabase → proyecto 5m-news → Project Settings → API Keys → Secret keys (`sb_secret_…`) |
-| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (se paga por uso en Anthropic) |
+| `GEMINI_API_KEY` | aistudio.google.com → Get API key (gratis, empieza con `AIza`) |
+| `ANTHROPIC_API_KEY` | Opcional, pago: sólo se usa si no hay `GEMINI_API_KEY` |
 | `BREVO_API_KEY`, `BREVO_SENDER`, `RESEND_API_KEY`, `ADMIN_KEY` | Los mismos que en Netlify |
 | `SITE_URL` | Opcional: sólo con dominio propio (si no, se usa la URL de Render) |
 | `CRON_SECRET` | Opcional: si se define, cargalo también como secret del repo |

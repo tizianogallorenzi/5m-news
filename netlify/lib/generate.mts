@@ -176,7 +176,52 @@ const TOOL_SEMANAL: Anthropic.Tool = {
   },
 };
 
+// ---------- Gemini (alternativa gratuita): se usa si hay GEMINI_API_KEY ----------
+
+const GEMINI_DEFAULT = "gemini-flash-latest";
+const usaGemini = () => !!Netlify.env.get("GEMINI_API_KEY");
+/** Modelo que redacta (queda registrado en `generado.modelo`). */
+const modeloActual = () =>
+  usaGemini() ? Netlify.env.get("GEMINI_MODEL") || GEMINI_DEFAULT : Netlify.env.get("BRIEFING_MODEL") || MODELO_DEFAULT;
+
+/** JSON Schema de la herramienta → esquema de Gemini (tipos en mayúscula, sólo las claves que acepta). */
+function esquemaGemini(s: any): any {
+  if (!s || typeof s !== "object") return s;
+  const out: any = {};
+  if (s.type) out.type = String(s.type).toUpperCase();
+  for (const k of ["description", "enum", "format", "nullable", "maxItems", "minItems", "minimum", "maximum"]) if (s[k] !== undefined) out[k] = s[k];
+  if (s.items) out.items = esquemaGemini(s.items);
+  if (s.properties) out.properties = Object.fromEntries(Object.entries(s.properties).map(([k, v]) => [k, esquemaGemini(v)]));
+  if (s.required) out.required = s.required;
+  return out;
+}
+
+async function llamarGemini(tool: Anthropic.Tool, prompt: string, timeoutMs: number, maxTokens: number) {
+  const modelo = modeloActual();
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": Netlify.env.get("GEMINI_API_KEY")! },
+    signal: AbortSignal.timeout(timeoutMs),
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SISTEMA }] },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      tools: [{ functionDeclarations: [{ name: tool.name, description: tool.description, parameters: esquemaGemini(tool.input_schema) }] }],
+      toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [tool.name] } },
+      // Margen amplio: los modelos Flash "piensan" antes de responder y eso también cuenta como salida
+      generationConfig: { temperature: 0.4, maxOutputTokens: Math.max(maxTokens * 3, 16_000) },
+    }),
+  });
+  const data = (await res.json().catch(() => ({}))) as any;
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${String(data?.error?.message ?? "").slice(0, 300)}`);
+  const cand = data?.candidates?.[0];
+  const llamada = (cand?.content?.parts ?? []).find((p: any) => p.functionCall)?.functionCall;
+  if (!llamada) throw new Error(`Gemini no devolvió ${tool.name} (finishReason: ${cand?.finishReason ?? "?"})`);
+  const u = data?.usageMetadata ?? {};
+  return { input: llamada.args as any, usage: { input_tokens: u.promptTokenCount, output_tokens: u.candidatesTokenCount, modelo } as any };
+}
+
 async function llamarClaude(tool: Anthropic.Tool, prompt: string, timeoutMs: number, maxTokens: number) {
+  if (usaGemini()) return llamarGemini(tool, prompt, timeoutMs, maxTokens);
   // Sin argumentos de credenciales: el AI Gateway inyecta ANTHROPIC_API_KEY y ANTHROPIC_BASE_URL.
   const client = new Anthropic({ timeout: timeoutMs, maxRetries: 0 });
   const res = await client.messages.create({
@@ -401,7 +446,7 @@ export function armarBriefing(salida: any, ins: Insumos, semanal: Briefing["sema
     },
     tendencias,
     semanal,
-    generado: { at: ahora.toISOString(), modelo: Netlify.env.get("BRIEFING_MODEL") || MODELO_DEFAULT, notasFuente: ins.items.length, avisos },
+    generado: { at: ahora.toISOString(), modelo: modeloActual(), notasFuente: ins.items.length, avisos },
   };
   return { briefing, avisos };
 }

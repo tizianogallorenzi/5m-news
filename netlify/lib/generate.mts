@@ -197,7 +197,7 @@ function esquemaGemini(s: any): any {
 }
 
 /** Modelos a probar en orden: el configurado y, si está saturado o no existe, alternativas gratuitas. */
-const modelosGemini = () => [...new Set([modeloActual(), "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"])];
+const modelosGemini = () => [...new Set([modeloActual(), "gemini-flash-lite-latest", "gemini-2.5-flash", "gemini-flash-latest"])];
 
 async function llamarGemini(tool: Anthropic.Tool, prompt: string, timeoutMs: number, maxTokens: number) {
   const fin = Date.now() + timeoutMs;
@@ -209,7 +209,7 @@ async function llamarGemini(tool: Anthropic.Tool, prompt: string, timeoutMs: num
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": Netlify.env.get("GEMINI_API_KEY")! },
-        signal: AbortSignal.timeout(restante),
+        signal: AbortSignal.timeout(Math.min(restante, 90_000)), // un modelo lento no se come todo el tiempo
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SISTEMA }] },
           contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -221,7 +221,7 @@ async function llamarGemini(tool: Anthropic.Tool, prompt: string, timeoutMs: num
       }).catch((e) => e as Error);
       if (res instanceof Error) {
         errores.push(`${modelo}: ${res.message}`);
-        continue;
+        break; // tardó demasiado: probar el siguiente modelo
       }
       const data = (await res.json().catch(() => ({}))) as any;
       if (res.ok) {

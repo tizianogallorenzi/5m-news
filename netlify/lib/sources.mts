@@ -110,7 +110,7 @@ export function parseFeed(xml: string): { titulo: string; url: string; resumen: 
 async function fetchTexto(url: string, ms = 8000) {
   const res = await fetch(url, {
     signal: AbortSignal.timeout(ms),
-    headers: { "user-agent": "5MNewsBot/1.0 (+https://5mnews.netlify.app)", accept: "application/rss+xml, application/xml, text/xml, */*" },
+    headers: { "user-agent": "5MNewsBot/1.0 (+https://fivem-news.onrender.com)", accept: "application/rss+xml, application/xml, text/xml, */*" },
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();

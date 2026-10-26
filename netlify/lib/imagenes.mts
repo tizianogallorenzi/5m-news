@@ -5,7 +5,7 @@
 import { getStore } from "@netlify/blobs";
 import type { Briefing, ImagenNoticia, Noticia } from "./briefing.mts";
 
-const UA = "Mozilla/5.0 (compatible; 5MNewsBot/1.0; +https://5mnews.netlify.app)";
+const UA = "Mozilla/5.0 (compatible; 5MNewsBot/1.0; +https://fivem-news.onrender.com)";
 const CACHE_OK_MS = 7 * 86_400_000; // la foto de una nota no cambia: 7 días
 const CACHE_VACIO_MS = 3 * 3_600_000; // sin foto: se reintenta a las 3 horas
 const MAX_HTML = 900_000; // los metadatos están en el <head>; no hace falta bajar la página entera

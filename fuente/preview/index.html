@@ -1236,14 +1236,13 @@
         const borrarViejo = 'Si antes creaste un acceso directo que abre en el navegador, borralo: mantenelo apretado y elegí <b>"Quitar"</b>.';
         if (android && !chromeAndroid && !samsung) return [
           `${internoApp ? 'Estás viendo 5M News dentro de otra app (WhatsApp, Instagram…): desde ahí sólo se crea un acceso directo que abre en el navegador.' : 'Este navegador no instala apps: sólo crea un acceso directo que abre en el navegador.'}`,
-          `Abrí 5M News en Chrome: <a href="${urlChrome}" class="inline-flex items-center gap-1 mt-1 h-9 px-4 rounded-full bg-pulse text-white font-semibold no-underline">Abrir en Chrome</a><br><span class="text-slate-500">(o copiá 5mnews.netlify.app y pegalo en Chrome).</span>`,
+          `Abrí 5M News en Chrome: <a href="${urlChrome}" class="inline-flex items-center gap-1 mt-1 h-9 px-4 rounded-full bg-pulse text-white font-semibold no-underline">Abrir en Chrome</a><br><span class="text-slate-500">(o copiá ${location.host} y pegalo en Chrome).</span>`,
           'Ya en Chrome, tocá el botón <b>"App"</b> de arriba y después <b>"Instalar"</b>.',
           borrarViejo,
         ];
         if (samsung) return [
-          'Tocá el menú (las tres rayas) abajo a la derecha.',
-          'Elegí <b>"Agregar página a"</b> &rarr; <b>"Pantalla de inicio"</b> y confirmá con <b>"Instalar"</b> si aparece.',
-          'Si queda abriendo en el navegador, abrí 5mnews.netlify.app en <b>Chrome</b> e instalala desde ahí.',
+          `La forma más segura en Samsung es instalarla desde Chrome: <a href="${urlChrome}" class="inline-flex items-center gap-1 mt-1 h-9 px-4 rounded-full bg-pulse text-white font-semibold no-underline">Abrir en Chrome</a><br><span class="text-slate-500">Ya en Chrome, tocá <b>"App"</b> arriba y después <b>"Instalar"</b>.</span>`,
+          'Si preferís el navegador de Samsung: tocá el ícono de instalar en la barra de direcciones (un teléfono con una flecha), o el menú <b>&#8801;</b> &rarr; <b>"Agregar página a"</b> &rarr; <b>"Pantalla de inicio"</b>, y elegí <b>"Instalar"</b> (no "Acceso directo").',
           borrarViejo,
         ];
         if (android) return [
@@ -1260,7 +1259,7 @@
         if (firefox) return [
           'Firefox en computadora no instala apps web: guardala en favoritos con <b>Ctrl + D</b> (o <b>Cmd + D</b> en Mac).',
           'Para un ícono en el escritorio, arrastrá el candado de la barra de direcciones hasta el escritorio.',
-          'Si usás Chrome o Edge, abrí 5mnews.netlify.app ahí y tocá <b>"Instalar app"</b>: queda como app.',
+          `Si usás Chrome o Edge, abrí ${location.host} ahí y tocá <b>"Instalar app"</b>: queda como app.`,
         ];
         return [
           'En la barra de direcciones, hacé clic en el ícono de instalar (una pantalla con una flecha), a la derecha.',

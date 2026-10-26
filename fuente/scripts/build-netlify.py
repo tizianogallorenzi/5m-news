@@ -29,7 +29,8 @@ html = html.replace('<link rel="preconnect" href="https://fonts.googleapis.com">
 with tempfile.TemporaryDirectory() as tmp:
     inp, css = pathlib.Path(tmp, "in.css"), pathlib.Path(tmp, "out.css")
     inp.write_text("@tailwind base;\n@tailwind components;\n@tailwind utilities;\n")
-    subprocess.run(["npx", "tailwindcss", "-c", str(root / "scripts/tailwind.static.config.js"),
+    tw = [shutil.which("tailwindcss")] if shutil.which("tailwindcss") else ["npx", "-y", "tailwindcss@3.4.19"]
+    subprocess.run([*tw, "-c", str(root / "scripts/tailwind.static.config.js"),
                     "-i", str(inp), "-o", str(css), "--minify"], check=True, cwd=root)
     html = html.replace('<link rel="stylesheet" href="__CSS__">', "<style>" + css.read_text() + "</style>")
 (out_dir / "index.html").write_text(html)

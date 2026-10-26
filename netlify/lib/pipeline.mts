@@ -78,7 +78,7 @@ export async function actualizarBriefing({ forzar = false } = {}): Promise<Resul
     const { briefing, avisos, usage, semanalNuevo } = await generarBriefing(insumos, {
       semanalPrevio: previo.semanal,
       notasSemana: conSemanal ? await notasDeLaSemana(hoy) : [],
-      timeoutMs: 150_000,
+      timeoutMs: 300_000, // función de fondo: hay tiempo para reintentos y modelos de respaldo
       conSemanal,
     });
     if (semanalNuevo) await work.set(`semanal-${hoy}`, "1");
@@ -104,7 +104,7 @@ export async function actualizarBriefing({ forzar = false } = {}): Promise<Resul
 
 /** Dispara la función de fondo que hace la actualización (responde 202 al instante). */
 export async function dispararActualizacion(forzar = false) {
-  const base = Netlify.env.get("URL") || "https://5mnews.netlify.app";
+  const base = Netlify.env.get("URL") || "https://fivem-news.onrender.com";
   const res = await fetch(`${base}/.netlify/functions/briefing-update-background${forzar ? "?forzar=1" : ""}`, {
     method: "POST",
     headers: { "x-5m-key": Netlify.env.get("ADMIN_KEY") ?? "" },

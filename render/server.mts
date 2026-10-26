@@ -75,6 +75,7 @@ const FUNCIONES: Record<string, Mod> = {
   "briefing-pipeline": await import("../netlify/functions/briefing-pipeline.mts"),
   "send-daily": await import("../netlify/functions/send-daily.mts"),
   "send-weekly": await import("../netlify/functions/send-weekly.mts"),
+  "send-weekly-push": await import("../netlify/functions/send-weekly-push.mts"),
   // Función de fondo (sufijo -background): responde 202 y sigue trabajando
   "briefing-update-background": await import("../netlify/functions/briefing-update-background.mts"),
 };
@@ -166,7 +167,8 @@ async function enviar(r: Response | void, res: ServerResponse, extra: Record<str
 const CRON: Record<string, string> = {
   hourly: "briefing-pipeline", // "0 * * * *"  actualización del briefing cada hora
   daily: "send-daily",         // "0 10 * * 1-5"  email + notificación 7:00 ART, lunes a viernes
-  weekly: "send-weekly",       // "30 10 * * 4"  Resumen de los Jueves
+  weekly: "send-weekly",       // "30 10 * * 4"  Resumen de los Jueves por email (07:30 ART)
+  weeklypush: "send-weekly-push", // "0 22 * * 4"  notificación del Resumen semanal (19:00 ART)
 };
 
 /**
@@ -178,7 +180,7 @@ async function cronNoPermitido(cron: string): Promise<string | null> {
   const ahora = new Date();
   const diaART = new Intl.DateTimeFormat("en-US", { timeZone: "America/Argentina/Buenos_Aires", weekday: "short" }).format(ahora);
   if (cron === "daily" && (diaART === "Sat" || diaART === "Sun")) return "El briefing diario sale de lunes a viernes.";
-  if (cron === "weekly" && diaART !== "Thu") return "El Resumen de los Jueves sale sólo los jueves.";
+  if ((cron === "weekly" || cron === "weeklypush") && diaART !== "Thu") return "El Resumen de los Jueves sale sólo los jueves.";
   if (cron === "hourly") {
     const control = getStore("cron-control");
     const ultimo = Number((await control.get("hourly")) ?? 0);

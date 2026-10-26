@@ -178,7 +178,7 @@
           <div id="hero"></div>
           <div id="franja-notif" class="hidden lg:hidden mt-4 rounded-2xl border border-custom bg-card p-3 flex items-center gap-3">
             <span class="w-10 h-10 shrink-0 rounded-full bg-pulse/10 text-pulse grid place-items-center" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
-            <p class="flex-1 text-sm leading-snug"><b>Notificaciones</b><br><span class="text-slate-500">El briefing de lunes a viernes a las 7:00 AM.</span></p>
+            <p class="flex-1 text-sm leading-snug"><b>Notificaciones</b><br><span class="text-slate-500">Diario a las 7:00 AM, los jueves a las 7:00 PM o las dos.</span></p>
             <button type="button" id="franja-notif-si" class="h-9 px-4 rounded-full bg-pulse text-white text-sm font-semibold">Activar</button>
           </div>
         </section>
@@ -242,7 +242,7 @@
             </span>
             <div class="min-w-0">
               <h3 class="font-serif font-bold text-xl leading-tight">Notificaciones</h3>
-              <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Recibí el briefing <b class="text-slate-900 dark:text-white">de lunes a viernes a las 7:00 AM</b> y el Resumen de los Jueves, directo en tu pantalla.</p>
+              <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Elegí qué recibir en tu pantalla: el briefing <b class="text-slate-900 dark:text-white">de lunes a viernes a las 7:00 AM</b>, el Resumen semanal <b class="text-slate-900 dark:text-white">los jueves a las 7:00 PM</b>, o las dos.</p>
             </div>
           </div>
           <div id="notif-estado" class="mt-4 text-sm" aria-live="polite"></div>
@@ -1313,26 +1313,60 @@
       }
     })();
   </script>
+  <dialog id="dlg-notif" class="w-[min(92vw,26rem)] rounded-2xl p-0 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 shadow-2xl backdrop:bg-black/50" aria-labelledby="dlg-notif-titulo">
+    <form method="dialog" id="form-notif" class="p-6">
+      <h2 id="dlg-notif-titulo" class="font-serif font-semibold text-xl leading-tight">¿Qué notificaciones querés?</h2>
+      <p class="text-sm text-slate-500 mt-1">Podés cambiarlo cuando quieras.</p>
+      <fieldset class="mt-4 space-y-2">
+        <legend class="sr-only">Notificaciones</legend>
+        <label class="flex items-start gap-3 rounded-xl border border-custom p-3 cursor-pointer has-[:checked]:border-pulse/70">
+          <input type="checkbox" id="notif-diario" class="mt-0.5 w-4 h-4 accent-pulse" checked>
+          <span class="text-sm leading-tight"><b>Briefing diario</b><span class="block text-xs text-slate-500 mt-0.5">De lunes a viernes a las 7:00 AM</span></span>
+        </label>
+        <label class="flex items-start gap-3 rounded-xl border border-custom p-3 cursor-pointer has-[:checked]:border-pulse/70">
+          <input type="checkbox" id="notif-semanal" class="mt-0.5 w-4 h-4 accent-pulse" checked>
+          <span class="text-sm leading-tight"><b>Resumen semanal</b><span class="block text-xs text-slate-500 mt-0.5">Los jueves a las 7:00 PM</span></span>
+        </label>
+      </fieldset>
+      <p id="notif-error" class="hidden mt-3 text-sm text-red-600" role="alert"></p>
+      <div class="mt-5 flex justify-end gap-2">
+        <button type="button" data-cerrar class="h-10 px-4 rounded-full text-sm font-semibold hover:bg-black/5 dark:hover:bg-white/10">Cancelar</button>
+        <button type="submit" id="notif-confirmar" class="h-10 px-5 rounded-full bg-pulse text-white text-sm font-semibold hover:opacity-90">Activar</button>
+      </div>
+    </form>
+  </dialog>
   <div id="aviso-notif" class="hidden fixed inset-x-3 bottom-3 z-40 md:inset-x-auto md:right-5 md:w-96 rounded-2xl border border-custom bg-white dark:bg-slate-900 shadow-xl p-3 flex items-center gap-3">
     <span class="w-11 h-11 shrink-0 rounded-xl bg-pulse text-white grid place-items-center" aria-hidden="true"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
-    <p class="flex-1 text-sm leading-snug"><b>Activá las notificaciones</b><br><span class="text-slate-500">El briefing de lunes a viernes a las 7:00 AM.</span></p>
+    <p class="flex-1 text-sm leading-snug"><b>Activá las notificaciones</b><br><span class="text-slate-500">Diario a las 7:00 AM, los jueves a las 7:00 PM o las dos.</span></p>
     <button type="button" id="aviso-notif-si" class="h-9 px-4 rounded-full bg-pulse text-white text-sm font-semibold">Activar</button>
     <button type="button" id="aviso-notif-no" class="w-8 h-8 grid place-items-center rounded-full text-slate-500 hover:bg-black/5" aria-label="Cerrar aviso">
       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
   <script>
-    // ---------- Notificaciones push (briefing 7:00 y Resumen de los Jueves) ----------
+    // ---------- Notificaciones push: briefing diario (lun a vie 7:00 AM) y/o Resumen semanal (jueves 7:00 PM) ----------
     (() => {
       const caja = document.getElementById('notif-estado');
       const aviso = document.getElementById('aviso-notif');
-      if (!caja) return;
+      const dlg = document.getElementById('dlg-notif');
+      if (!caja || !dlg) return;
       const instalada = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
       const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const soporta = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
       const BTN = 'inline-flex items-center justify-center h-10 px-5 rounded-full text-sm font-semibold';
       const bytes = (b64) => Uint8Array.from(atob((b64 + '='.repeat((4 - b64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
       const reg = () => navigator.serviceWorker.ready;
+      const chkDiario = document.getElementById('notif-diario');
+      const chkSemanal = document.getElementById('notif-semanal');
+      const btnConfirmar = document.getElementById('notif-confirmar');
+      const error = document.getElementById('notif-error');
+
+      // Preferencias de este dispositivo (el servidor guarda las mismas; esto es para mostrarlas)
+      const leerPrefs = () => { try { return JSON.parse(localStorage.getItem('5m-notif-prefs')) || { diario: true, semanal: true }; } catch { return { diario: true, semanal: true }; } };
+      const guardarPrefs = (p) => { try { localStorage.setItem('5m-notif-prefs', JSON.stringify(p)); } catch {} };
+      const describir = (p) => p.diario && p.semanal
+        ? 'el briefing de lunes a viernes a las 7:00 AM y el Resumen semanal los jueves a las 7:00 PM'
+        : p.diario ? 'el briefing de lunes a viernes a las 7:00 AM' : 'el Resumen semanal los jueves a las 7:00 PM';
 
       async function suscripcionActual() {
         if (!soporta || Notification.permission !== 'granted') return null;
@@ -1354,28 +1388,53 @@
         const sub = await suscripcionActual().catch(() => null);
         caja.innerHTML = sub
           ? `<p class="flex items-center gap-2 font-semibold text-emerald-700 dark:text-emerald-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Activadas en este dispositivo</p>
-             <p class="mt-1 text-xs text-slate-500">Te llegan de lunes a viernes a las 7:00 AM y los jueves, el Resumen de los Jueves.</p>
-             <button type="button" data-notif="off" class="mt-2 text-xs text-slate-500 underline hover:text-pulse">Desactivar</button>`
+             <p class="mt-1 text-xs text-slate-500">Recibís ${describir(leerPrefs())}.</p>
+             <p class="mt-2 flex gap-4 text-xs"><button type="button" data-notif="cambiar" class="text-pulse font-semibold underline">Cambiar</button><button type="button" data-notif="off" class="text-slate-500 underline hover:text-pulse">Desactivar</button></p>`
           : `<button type="button" data-notif="on" class="${BTN} w-full bg-pulse text-white hover:opacity-90">Activar notificaciones</button>`;
         if (!sub) franja?.classList.remove('hidden'); // en el celular, a la vista debajo de la noticia principal
       }
-      async function activar() {
-        caja.innerHTML = '<p class="text-slate-500">Activando…</p>';
+
+      // Abre la elección (diario / semanal / las dos)
+      async function elegir() {
+        ocultarAviso();
+        const p = leerPrefs();
+        chkDiario.checked = p.diario; chkSemanal.checked = p.semanal;
+        const sub = await suscripcionActual().catch(() => null);
+        btnConfirmar.textContent = sub ? 'Guardar' : 'Activar';
+        error.classList.add('hidden');
+        actualizarBoton();
+        dlg.showModal();
+      }
+      function actualizarBoton() { btnConfirmar.disabled = !chkDiario.checked && !chkSemanal.checked; btnConfirmar.classList.toggle('opacity-50', btnConfirmar.disabled); }
+      chkDiario.addEventListener('change', actualizarBoton);
+      chkSemanal.addEventListener('change', actualizarBoton);
+      dlg.addEventListener('click', (e) => { if (e.target === dlg || e.target.closest('[data-cerrar]')) dlg.close(); });
+
+      async function confirmar() {
+        const prefs = { diario: chkDiario.checked, semanal: chkSemanal.checked };
+        if (!prefs.diario && !prefs.semanal) return;
+        btnConfirmar.disabled = true; btnConfirmar.textContent = 'Un momento…';
         try {
+          // El permiso del sistema se pide acá, con el toque del usuario (requisito de los navegadores)
           const permiso = await Notification.requestPermission();
-          if (permiso !== 'granted') return pintar();
+          if (permiso !== 'granted') { dlg.close(); return pintar(); }
           const { publicKey } = await (await fetch('/api/push/clave')).json();
           const r = await reg();
           const sub = (await r.pushManager.getSubscription()) || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(publicKey) }));
-          const res = await fetch('/api/push/suscribir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subscription: sub }) });
+          const res = await fetch('/api/push/suscribir', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ subscription: sub, ...prefs }) });
           if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || res.status);
+          guardarPrefs(prefs);
+          dlg.close();
         } catch (e) {
-          caja.innerHTML = '<p class="text-red-600">No pudimos activarlas. Probá de nuevo en un rato.</p>';
+          error.textContent = 'No pudimos activarlas. Probá de nuevo en un rato.';
+          error.classList.remove('hidden');
+          btnConfirmar.disabled = false; btnConfirmar.textContent = 'Reintentar';
           return;
         }
-        ocultarAviso();
         pintar();
       }
+      document.getElementById('form-notif').addEventListener('submit', (e) => { e.preventDefault(); confirmar(); });
+
       async function desactivar() {
         const sub = await suscripcionActual().catch(() => null);
         if (sub) {
@@ -1390,10 +1449,11 @@
       }
       caja.addEventListener('click', (e) => {
         const b = e.target.closest('[data-notif]');
-        if (b) b.dataset.notif === 'on' ? activar() : desactivar();
+        if (!b) return;
+        if (b.dataset.notif === 'off') desactivar(); else elegir();
       });
-      document.getElementById('aviso-notif-si').addEventListener('click', activar);
-      document.getElementById('franja-notif-si')?.addEventListener('click', () => { franja.innerHTML = '<p class="text-sm text-slate-500 px-1">Activando…</p>'; activar().then(() => franja.classList.add('hidden')); });
+      document.getElementById('aviso-notif-si').addEventListener('click', elegir);
+      document.getElementById('franja-notif-si')?.addEventListener('click', elegir);
       document.getElementById('aviso-notif-no').addEventListener('click', ocultarAviso);
       pintar();
 
@@ -1404,7 +1464,7 @@
       if (soporta && Notification.permission === 'default' && Date.now() - ultimo > 14 * 86400000) {
         const mostrar = () => {
           const instalarVisible = !document.getElementById('aviso-instalar')?.classList.contains('hidden');
-          if (instalarVisible || document.getElementById('aviso-nuevas') || document.getElementById('dlg-instalar')?.open) return setTimeout(mostrar, 15000);
+          if (instalarVisible || document.getElementById('aviso-nuevas') || document.getElementById('dlg-instalar')?.open || dlg.open) return setTimeout(mostrar, 15000);
           suscripcionActual().then((sub) => { if (!sub) aviso.classList.remove('hidden'); }).catch(() => {});
         };
         setTimeout(mostrar, instalada ? 6000 : 25000);

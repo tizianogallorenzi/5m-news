@@ -10,7 +10,13 @@ export interface SuscripcionPush {
   keys: { p256dh: string; auth: string };
   creada: string;
   ua?: string;
+  /** Qué recibe este dispositivo (si falta, ambas: suscripciones anteriores a las preferencias) */
+  diario?: boolean;
+  semanal?: boolean;
 }
+
+/** Briefing diario: lunes a viernes 7:00 AM. Resumen semanal: jueves 7:00 PM (hora de Argentina). */
+export const recibe = (s: SuscripcionPush, edition: Edition) => (edition === "daily" ? s.diario !== false : s.semanal !== false);
 
 const pushStore = () => getStore({ name: "push-subscribers", consistency: "strong" });
 const configStore = () => getStore({ name: "push-config", consistency: "strong" });
@@ -40,6 +46,10 @@ export async function clavesVapid(): Promise<{ publicKey: string; privateKey: st
   // onlyIfNew: si dos pedidos llegan a la vez, gana el primero y ambos usan las mismas claves
   await store.setJSON("vapid", nuevas, { onlyIfNew: true });
   return ((await store.get("vapid", { type: "json" })) as typeof nuevas) ?? nuevas;
+}
+
+export async function leerSuscripcion(endpoint: string) {
+  return (await pushStore().get(await claveDe(endpoint), { type: "json" })) as SuscripcionPush | null;
 }
 
 export async function guardarSuscripcion(s: SuscripcionPush) {
@@ -115,7 +125,7 @@ export async function enviarEdicionPush(edition: Edition, { force = false } = {}
   const claveLog = `push-${edition}-${hoy}`;
   if (!force && (await log.get(claveLog))) return { skipped: `${claveLog} ya enviada` };
 
-  const subs = await listarSuscripciones();
+  const subs = (await listarSuscripciones()).filter((s) => recibe(s, edition));
   const aviso = avisoDeEdicion(b, edition);
   let enviadas = 0, bajas = 0;
   const errores: string[] = [];

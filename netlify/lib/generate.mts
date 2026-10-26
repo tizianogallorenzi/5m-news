@@ -196,28 +196,53 @@ function esquemaGemini(s: any): any {
   return out;
 }
 
+/** Modelos a probar en orden: el configurado y, si está saturado o no existe, alternativas gratuitas. */
+const modelosGemini = () => [...new Set([modeloActual(), "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"])];
+
 async function llamarGemini(tool: Anthropic.Tool, prompt: string, timeoutMs: number, maxTokens: number) {
-  const modelo = modeloActual();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-goog-api-key": Netlify.env.get("GEMINI_API_KEY")! },
-    signal: AbortSignal.timeout(timeoutMs),
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SISTEMA }] },
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      tools: [{ functionDeclarations: [{ name: tool.name, description: tool.description, parameters: esquemaGemini(tool.input_schema) }] }],
-      toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [tool.name] } },
-      // Margen amplio: los modelos Flash "piensan" antes de responder y eso también cuenta como salida
-      generationConfig: { temperature: 0.4, maxOutputTokens: Math.max(maxTokens * 3, 16_000) },
-    }),
-  });
-  const data = (await res.json().catch(() => ({}))) as any;
-  if (!res.ok) throw new Error(`Gemini ${res.status}: ${String(data?.error?.message ?? "").slice(0, 300)}`);
-  const cand = data?.candidates?.[0];
-  const llamada = (cand?.content?.parts ?? []).find((p: any) => p.functionCall)?.functionCall;
-  if (!llamada) throw new Error(`Gemini no devolvió ${tool.name} (finishReason: ${cand?.finishReason ?? "?"})`);
-  const u = data?.usageMetadata ?? {};
-  return { input: llamada.args as any, usage: { input_tokens: u.promptTokenCount, output_tokens: u.candidatesTokenCount, modelo } as any };
+  const fin = Date.now() + timeoutMs;
+  const errores: string[] = [];
+  for (const modelo of modelosGemini()) {
+    for (let intento = 1; intento <= 2; intento++) {
+      const restante = fin - Date.now();
+      if (restante < 5_000) break;
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelo)}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": Netlify.env.get("GEMINI_API_KEY")! },
+        signal: AbortSignal.timeout(restante),
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SISTEMA }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          tools: [{ functionDeclarations: [{ name: tool.name, description: tool.description, parameters: esquemaGemini(tool.input_schema) }] }],
+          toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [tool.name] } },
+          // Margen amplio: los modelos Flash "piensan" antes de responder y eso también cuenta como salida
+          generationConfig: { temperature: 0.4, maxOutputTokens: Math.max(maxTokens * 3, 16_000) },
+        }),
+      }).catch((e) => e as Error);
+      if (res instanceof Error) {
+        errores.push(`${modelo}: ${res.message}`);
+        continue;
+      }
+      const data = (await res.json().catch(() => ({}))) as any;
+      if (res.ok) {
+        const cand = data?.candidates?.[0];
+        const llamada = (cand?.content?.parts ?? []).find((p: any) => p.functionCall)?.functionCall;
+        if (llamada) {
+          const u = data?.usageMetadata ?? {};
+          return { input: llamada.args as any, usage: { input_tokens: u.promptTokenCount, output_tokens: u.candidatesTokenCount, modelo } as any };
+        }
+        errores.push(`${modelo}: no devolvió ${tool.name} (finishReason: ${cand?.finishReason ?? "?"})`);
+        continue;
+      }
+      const msg = `${modelo} ${res.status}: ${String(data?.error?.message ?? "").slice(0, 160)}`;
+      // Clave inválida o pedido mal formado: no tiene sentido probar otro modelo
+      if (res.status === 400 && /api key/i.test(msg)) throw new Error(`Gemini ${msg}`);
+      errores.push(msg);
+      if (res.status === 404) break; // el modelo no existe: pasar al siguiente
+      if (res.status === 429 || res.status >= 500) await new Promise((r) => setTimeout(r, 4_000 * intento)); // saturado: esperar y reintentar
+    }
+  }
+  throw new Error(`Gemini no respondió: ${errores.join(" | ")}`);
 }
 
 async function llamarClaude(tool: Anthropic.Tool, prompt: string, timeoutMs: number, maxTokens: number) {

@@ -75,7 +75,6 @@ export async function enviarA(s: SuscripcionPush, aviso: Aviso, ttlSeg = 6 * 360
     await webpush.sendNotification(s, JSON.stringify(aviso), {
       TTL: ttlSeg,
       urgency: "normal",
-      topic: aviso.tag.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 32),
       vapidDetails: { subject: sujeto, publicKey, privateKey },
       timeout: 10_000,
     });

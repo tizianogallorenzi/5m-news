@@ -504,6 +504,19 @@ const TOOL_ACORTAR: Anthropic.Tool = {
   },
 };
 
+const CONECTORES = new Set("a al ante como con contra de del desde durante e el en entre frente hacia la las lo los mediante más muy o para por que se según sin sobre su sus tras u un una y ya".split(" "));
+/** Último recurso si el modelo no acorta: corta a 12 palabras en un punto natural (sin terminar en "de", "por", coma...). */
+export function recorteSeguro(titulo: string): string {
+  const pal = titulo.trim().split(/\s+/);
+  if (pal.length <= 12) return titulo.trim();
+  let corte = pal.slice(0, 12);
+  // Preferir cortar en una pausa (coma, dos puntos, raya) si deja al menos 6 palabras
+  const pausa = corte.findLastIndex((w, i) => i >= 5 && /[,:;\u2014]$/.test(w));
+  if (pausa >= 5) corte = corte.slice(0, pausa + 1);
+  while (corte.length > 6 && CONECTORES.has(corte[corte.length - 1].toLowerCase().replace(/[^a-záéíóúñü]/gi, ""))) corte.pop();
+  return corte.join(" ").replace(/[,:;\u2014\-]+$/, "").trim();
+}
+
 /** Reescribe en el lugar los titulares de más de 12 palabras (noticias y mercados). Devuelve cuántos corrigió. */
 async function acortarTitulares(salida: any, timeoutMs: number): Promise<number> {
   const notas: any[] = [...(Array.isArray(salida?.noticias) ? salida.noticias : []), ...(Array.isArray(salida?.mercados) ? salida.mercados : [])];
@@ -543,7 +556,15 @@ export async function generarBriefing(
     const n = await acortarTitulares(diario.input, opts.timeoutMs);
     if (n) avisosExtra.push(`Titulares acortados a 12 palabras: ${n}`);
   } catch (e) {
-    avisosExtra.push(`No se pudieron acortar titulares: ${(e as Error).message}`);
+    avisosExtra.push(`No se pudieron acortar titulares: ${(e as Error).message.slice(0, 200)}`);
+  }
+  // Si el modelo no pudo (saturado o devolvió otro titular largo), recorte seguro en vez de descartar la noticia
+  for (const n of [...(Array.isArray(diario.input?.noticias) ? diario.input.noticias : []), ...(Array.isArray(diario.input?.mercados) ? diario.input.mercados : [])]) {
+    if (typeof n?.titulo === "string" && palabras(n.titulo) > 12) {
+      const nuevo = recorteSeguro(n.titulo);
+      avisosExtra.push(`Titular recortado: "${n.titulo}" → "${nuevo}"`);
+      n.titulo = nuevo;
+    }
   }
 
   let semanalFinal = opts.semanalPrevio;

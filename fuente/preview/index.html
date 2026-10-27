@@ -819,10 +819,36 @@
       const hero = NOTICIAS.find((n) => n.hero) || NOTICIAS[0];
       const horaAct = ACTUALIZADO ? new Date(ACTUALIZADO).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit', hour12: false }) : hero.hora;
       $('#hero-hora').textContent = horaAct ? 'Actualizado ' + horaAct + ' hs · se actualiza cada hora' : '';
-      $('#hero').innerHTML = `
+      // Formato 5M: tiempo de lectura arriba; bajada = qué pasó y a quién afecta; 3 datos duros; "Por qué te importa"
+      const lecturaArriba = (n) => `<p class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-300 text-amber-900 dark:bg-amber-500/10 dark:border-amber-500/40 dark:text-timer px-3 py-1 text-xs font-bold uppercase tracking-wide"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Lectura: ${fmtSeg(n.seg)}</span>
+          ${fechaNoticia(n)}
+        </p>`;
+      const notaCompleta = (n) => {
+        const url = n.imagen?.enlace || n.fuentes?.[0]?.url;
+        if (!url) return '';
+        const medio = n.imagen?.credito || n.fuentes?.[0]?.nombre || 'el medio';
+        return `<a href="${esc(urlSegura(url))}" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 mb-3 text-sm font-bold text-pulse hover:underline underline-offset-2">Leer la noticia completa en ${esc(medio)}${ICONO_EXTERNO}<span class="sr-only"> (enlace externo, se abre en una pestaña nueva)</span></a>`;
+      };
+      $('#hero').innerHTML = Array.isArray(hero.claves) && hero.claves.length ? `
         <article class="group p-6 sm:p-8 rounded-2xl border border-custom bg-card shadow-sm">
-          <div class="mb-3">${fechaNoticia(hero)}</div>
-          <div class="flex items-center justify-between gap-2 mb-4">${catLabel(hero.cat)}${tiempo(hero.seg)}</div>
+          ${lecturaArriba(hero)}
+          <div class="mb-4">${catLabel(hero.cat)}</div>
+          ${portada(hero, { tam: 'text-2xl sm:text-4xl tracking-tight', clamp: 'line-clamp-4 sm:line-clamp-3' })}
+          <p class="text-lg sm:text-xl font-medium leading-snug mt-4 text-slate-800 dark:text-slate-100">${esc(hero.bajada)}</p>
+          <ul class="mt-5 space-y-2.5">
+            ${hero.claves.slice(0, 3).map((c) => `<li class="flex gap-3 text-[15px] leading-relaxed text-slate-700 dark:text-slate-300"><span class="mt-2 w-1.5 h-1.5 shrink-0 rounded-full bg-pulse" aria-hidden="true"></span><span>${esc(c)}</span></li>`).join('')}
+          </ul>
+          <div class="mt-5 rounded-xl border-l-4 border-pulse bg-pulse/5 dark:bg-pulse/10 p-4">
+            <p class="font-bold text-sm text-pulse uppercase tracking-wide">Por qué te importa</p>
+            <p class="mt-1.5 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">${esc(hero.porque)}</p>
+          </div>
+          <div class="mt-5 pt-4 border-t border-custom">${notaCompleta(hero)}${fuentes(hero.fuentes)}</div>
+        </article>` : `
+        <article class="group p-6 sm:p-8 rounded-2xl border border-custom bg-card shadow-sm">
+          ${lecturaArriba(hero)}
+          <div class="mb-4">${catLabel(hero.cat)}</div>
           ${portada(hero, { tam: 'text-2xl sm:text-4xl tracking-tight', clamp: 'line-clamp-4 sm:line-clamp-3' })}
           <p class="text-slate-600 dark:text-slate-300 text-lg mt-3">${esc(hero.bajada)}</p>
           ${visual(hero)}
@@ -834,7 +860,7 @@
                 <dd class="text-sm text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">${esc(d)}</dd>
               </div>`).join('')}
           </dl>
-          <div class="mt-5 pt-4 border-t border-custom">${fuentes(hero.fuentes)}</div>
+          <div class="mt-5 pt-4 border-t border-custom">${notaCompleta(hero)}${fuentes(hero.fuentes)}</div>
         </article>`;
 
       // ---------- 4 NOTICIAS CLAVE ----------

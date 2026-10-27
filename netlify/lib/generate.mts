@@ -36,6 +36,7 @@ Reglas obligatorias:
 - "que" (¿Qué pasó?): 2 o 3 oraciones con los hechos. "quien" (¿A quién afecta?): 1 o 2 oraciones. "porque" (¿Por qué importa hoy?): 1 o 2 oraciones, con foco en el lector argentino.
 - Cada bloque de texto debe ser breve: el briefing completo tiene que leerse en menos de 5 minutos.
 - No uses emojis ni símbolos decorativos en ningún texto.
+- Noticia "hero" (formato 5M de portada, hablándole al lector de vos, tono joven y directo): titular incisivo; "bajada" de hasta 2 oraciones (la primera cuenta qué pasó y la segunda a quién afecta); "claves": exactamente 3 datos duros, una oración corta cada uno, con cifras o hechos concretos de las notas; "porque" responde "Por qué te importa" en 1 o 2 oraciones, conectando el hecho con la vida cotidiana del lector argentino (bolsillo, trabajo, precios, servicios). Las demás noticias no llevan "claves".
 - "datos": hasta 3 cifras clave por noticia (valor corto, ej. "704 pb", "US$61 M"), copiadas de las notas o indicadores. "detalle": una oración de contexto.
 - "grafico": sólo si la nota trae 3 o más cifras comparables (misma unidad). "barras" para comparar valores; "linea" para la evolución en el tiempo. Nunca inventes ni estimes valores.`;
 
@@ -83,7 +84,8 @@ Usá solo hechos presentes en ese material. Publicá con la herramienta publicar
 
 const textoNoticia = {
   titulo: { type: "string", description: "Máximo 12 palabras" },
-  bajada: { type: "string", description: "Una sola oración" },
+  bajada: { type: "string", description: "Una sola oración (hero: hasta 2, qué pasó y a quién afecta)" },
+  claves: { type: "array", maxItems: 3, items: { type: "string" }, description: "Sólo hero: 3 datos duros, una oración corta cada uno" },
   que: { type: "string" },
   quien: { type: "string" },
   porque: { type: "string" },
@@ -271,8 +273,10 @@ const limpio = (v: unknown) => sinEmojis(String(v ?? ""));
 
 const palabras = (s: string) => s.trim().split(/\s+/).filter(Boolean).length;
 const primeraOracion = (s: string) => (s.trim().match(/^.+?[.!?](?=\s|$)/)?.[0] ?? s.trim());
-const segundosLectura = (n: Pick<Noticia, "titulo" | "bajada" | "que" | "quien" | "porque">) =>
-  Math.max(15, Math.round(((palabras([n.titulo, n.bajada, n.que, n.quien, n.porque].join(" ")) / 230) * 60) / 5) * 5);
+const dosOraciones = (s: string) => (s.trim().match(/^.+?[.!?](?=\s|$)(\s+.+?[.!?](?=\s|$))?/)?.[0] ?? s.trim());
+// La hero en formato 5M se lee bajada + claves + "por qué te importa"; las demás, sus bloques de siempre
+const segundosLectura = (n: Pick<Noticia, "titulo" | "bajada" | "que" | "quien" | "porque" | "claves">) =>
+  Math.max(15, Math.round(((palabras((n.claves?.length ? [n.titulo, n.bajada, ...n.claves, n.porque] : [n.titulo, n.bajada, n.que, n.quien, n.porque]).join(" ")) / 230) * 60) / 5) * 5);
 
 function resolverFuentes(ids: unknown, mapa: Map<string, Fuente>): Fuente[] {
   const vistos = new Set<string>();
@@ -318,6 +322,21 @@ export function numerosEn(texto: string): Set<number> {
 }
 /** ¿Cada número de `texto` está en `disponibles`? */
 const cifrasVerificadas = (texto: string, disponibles: Set<number>) => [...numerosEn(texto)].every((n) => disponibles.has(n));
+
+/** Datos duros de la hero: hasta 3, con cifras verificables en las fuentes (si no, se descarta el dato). */
+function validarClaves(raw: unknown, disponibles: Set<number>, avisos: string[], titulo: string): string[] | undefined {
+  const out: string[] = [];
+  for (const c of Array.isArray(raw) ? raw.slice(0, 3) : []) {
+    const txt = limpio(c).trim();
+    if (!txt || palabras(txt) > 30) continue;
+    if (!cifrasVerificadas(txt, disponibles)) {
+      avisos.push(`Dato duro descartado (cifra no verificable) en "${titulo}": ${txt}`);
+      continue;
+    }
+    out.push(txt);
+  }
+  return out.length >= 2 ? out : undefined;
+}
 
 function validarDatos(raw: unknown, disponibles: Set<number>, avisos: string[], titulo: string): DatoClave[] | undefined {
   const out: DatoClave[] = [];
@@ -388,8 +407,10 @@ export function armarBriefing(salida: any, ins: Insumos, semanal: Briefing["sema
       avisos.push(`Pasa a "feed" (una sola fuente): ${n.titulo}`);
       rol = "feed";
     }
-    const base = { rol, cat: n.cat, titulo: limpio(n.titulo), bajada: primeraOracion(limpio(n.bajada)), que: limpio(n.que), quien: limpio(n.quien), porque: limpio(n.porque), fuentes };
     const disp = disponiblesDe(fuentes, "");
+    const claves = rol === "hero" ? validarClaves(n.claves, disp, avisos, limpio(n.titulo)) : undefined;
+    const bajada = claves ? dosOraciones(limpio(n.bajada)) : primeraOracion(limpio(n.bajada));
+    const base = { rol, cat: n.cat, titulo: limpio(n.titulo), bajada, ...(claves ? { claves } : {}), que: limpio(n.que), quien: limpio(n.quien), porque: limpio(n.porque), fuentes };
     const datos = validarDatos(n.datos, disp, avisos, base.titulo);
     const grafico = validarGrafico(n.grafico, disp, avisos, base.titulo, fuentes);
     candidatas.push({ ...base, ...(datos ? { datos } : {}), ...(grafico ? { grafico } : {}) });
@@ -505,6 +526,7 @@ const TOOL_ACORTAR: Anthropic.Tool = {
 };
 
 const CONECTORES = new Set("a al ante como con contra de del desde durante e el en entre frente hacia la las lo los mediante más muy o para por que se según sin sobre su sus tras u un una y ya".split(" "));
+const SUBORDINANTES = new Set("que quien quienes cual cuales donde cuando cuyo cuya porque si mientras aunque".split(" "));
 /** Último recurso si el modelo no acorta: corta a 12 palabras en un punto natural (sin terminar en "de", "por", coma...). */
 export function recorteSeguro(titulo: string): string {
   const pal = titulo.trim().split(/\s+/);
@@ -513,6 +535,10 @@ export function recorteSeguro(titulo: string): string {
   // Preferir cortar en una pausa (coma, dos puntos, raya) si deja al menos 6 palabras
   const pausa = corte.findLastIndex((w, i) => i >= 5 && /[,:;\u2014]$/.test(w));
   if (pausa >= 5) corte = corte.slice(0, pausa + 1);
+  while (corte.length > 6 && CONECTORES.has(corte[corte.length - 1].toLowerCase().replace(/[^a-záéíóúñü]/gi, ""))) corte.pop();
+  // No dejar una subordinada abierta al final ("…de Israel que ponen a prueba"): cortar antes del "que", "donde"...
+  const abre = corte.findLastIndex((w, i) => i >= 5 && i >= corte.length - 5 && SUBORDINANTES.has(w.toLowerCase().replace(/[^a-záéíóúñü]/gi, "")));
+  if (abre >= 5) corte = corte.slice(0, abre);
   while (corte.length > 6 && CONECTORES.has(corte[corte.length - 1].toLowerCase().replace(/[^a-záéíóúñü]/gi, ""))) corte.pop();
   return corte.join(" ").replace(/[,:;\u2014\-]+$/, "").trim();
 }

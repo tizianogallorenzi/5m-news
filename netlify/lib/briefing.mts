@@ -16,6 +16,8 @@ export interface ImagenNoticia {
 export interface Noticia {
   cat: Categoria; hora: string; seg: number; hero?: boolean; clave?: boolean;
   titulo: string; bajada: string; que: string; quien: string; porque: string; fuentes: Fuente[];
+  /** Formato 5M de la portada: hasta 3 datos duros en viñetas (sólo la noticia hero) */
+  claves?: string[];
   /** Cifras destacadas (tarjetas expandibles en la web) */
   datos?: DatoClave[];
   /** Mini-visualización con datos de la nota */

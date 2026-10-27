@@ -1,9 +1,10 @@
 // Service worker de 5M News: hace instalable la web, la abre al instante y funciona sin conexión.
-// - Página: se muestra la última versión guardada al toque y se actualiza por detrás (así no se ve la
-//   pantalla de "despertando" del plan gratuito de Render).
+// - Página: red con 2,5 s de espera (si el servidor está despierto llega la versión nueva); si tarda, la última
+//   guardada al toque (así no se ve la pantalla de "despertando" de Render) y, si la nueva cambió, la página
+//   se recarga sola con el diseño nuevo.
 // - briefing.json: red con 2,5 s de espera; si tarda, la última edición guardada, y cuando llega la nueva
 //   se avisa a la página para que ofrezca actualizar.
-const CACHE = "5m-v3";
+const CACHE = "5m-v4";
 const BASE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -34,14 +35,22 @@ async function avisarClientes(tipo) {
 
 async function pagina(req) {
   const guardada = await caches.match("/");
+  const textoGuardado = guardada ? guardada.clone().text() : Promise.resolve("");
   const red = fetch(req)
     .then(async (res) => {
-      if (await esPaginaPropia(res)) await guardar("/", res.clone());
+      if (!(await esPaginaPropia(res))) return null;
+      await guardar("/", res.clone());
       return res;
     })
     .catch(() => null);
-  if (guardada) return guardada; // al instante; la red actualiza la copia para la próxima vez
-  return (await red) || Response.error();
+  if (!guardada) return (await red) || fetch(req).catch(() => Response.error());
+  const rapida = await Promise.race([red, new Promise((ok) => setTimeout(() => ok("tarde"), 2500))]);
+  if (rapida && rapida !== "tarde") return rapida;
+  // La red tardó (servidor despertando): versión guardada ahora; si la nueva es distinta, la página se recarga
+  red.then(async (res) => {
+    if (res && (await res.clone().text()) !== (await textoGuardado)) avisarClientes("pagina-nueva");
+  });
+  return guardada;
 }
 
 async function briefing(req) {

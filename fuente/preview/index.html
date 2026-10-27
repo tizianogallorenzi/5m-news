@@ -1202,6 +1202,8 @@
     // La app abre con la última edición guardada; cuando el service worker recibe la nueva, avisa
     if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', (e) => {
       if (e.data && e.data.tipo === 'briefing-nuevo') chequearNuevas(true);
+      // Diseño nuevo publicado: se recarga una vez para mostrarlo (sólo si todavía no empezó a leer)
+      if (e.data && e.data.tipo === 'pagina-nueva' && window.scrollY < 300) location.reload();
     });
 
     fetch('briefing.json', { cache: 'no-cache' })

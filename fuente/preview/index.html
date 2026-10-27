@@ -156,7 +156,15 @@
     <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-2">
       <div>
         <p class="kicker text-slate-500" id="fecha-larga"></p>
-        <h1 class="font-serif font-semibold text-4xl md:text-5xl tracking-tight mt-1 text-balance">Buen día. Esto es lo que tenés que saber.</h1>
+        <h1 class="font-serif font-semibold text-4xl md:text-5xl tracking-tight mt-1 text-balance"><span id="saludo">Buenos días.</span> Esto es lo que tenés que saber.</h1>
+        <script>
+          // Saludo según la hora de Argentina: días 6:00-12:59, tardes 13:00-19:59, noches 20:00-5:59
+          (function saludar() {
+            const h = Number(new Intl.DateTimeFormat('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+            document.getElementById('saludo').textContent = h >= 6 && h < 13 ? 'Buenos días.' : h >= 13 && h < 20 ? 'Buenas tardes.' : 'Buenas noches.';
+            setTimeout(saludar, 60 * 1000);
+          })();
+        </script>
       </div>
       <p class="text-sm text-slate-500 md:text-right"><b class="text-slate-900 dark:text-slate-100" id="cant-noticias"></b> · curadas y contrastadas por la redacción</p>
     </div>
